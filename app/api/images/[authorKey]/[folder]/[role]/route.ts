@@ -30,8 +30,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
         }
 
         const { data, mime_type } = result.rows[0];
+        const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
-        return new NextResponse(data, {
+        return new NextResponse(buffer, {
             status: 200,
             headers: {
                 'Content-Type': mime_type,

@@ -68,12 +68,13 @@ export async function POST(req: NextRequest) {
 
     // Save cover image if provided
     if (coverFile && coverFile.size > 0) {
-        const buffer = Buffer.from(await coverFile.arrayBuffer());
+        const arrayBuffer = await coverFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
         const mimeType = coverFile.type || 'image/jpeg';
 
         await pool.query(
             `INSERT INTO authors.images (author_key, book_id, role, filename, mime_type, data)
-             VALUES ($1, $2, 'cover', $3, $4, $5)
+             VALUES ($1, $2, 'cover', $3, $4, $5::bytea)
              ON CONFLICT (author_key, book_id, role)
              DO UPDATE SET
                  filename = EXCLUDED.filename,
@@ -100,7 +101,7 @@ export async function DELETE(req: NextRequest) {
 
     const pool = getPool();
 
-    // Images are deleted automatically via ON DELETE CASCADE
+    // Images deleted automatically via ON DELETE CASCADE
     await pool.query(
         `DELETE FROM authors.books WHERE id = $1 AND author_key = $2`,
         [bookId, authorKey]

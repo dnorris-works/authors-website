@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS authors.images (
     id          SERIAL PRIMARY KEY,
     author_key  TEXT NOT NULL,
     book_id     INTEGER REFERENCES authors.books(id) ON DELETE CASCADE,
-    role        TEXT NOT NULL,     -- 'cover' | 'logo' | 'hero' | 'favicon'
+    role        TEXT NOT NULL,
     filename    TEXT NOT NULL,
     mime_type   TEXT NOT NULL,
     data        BYTEA NOT NULL,
@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS authors.images (
     UNIQUE (author_key, book_id, role)
 );
 
--- Auto-update updated_at on change
 CREATE OR REPLACE FUNCTION authors.set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
