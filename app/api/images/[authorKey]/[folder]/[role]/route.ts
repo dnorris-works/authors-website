@@ -20,9 +20,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
         const pool = getPool();
         const result = await pool.query(
             `SELECT data, mime_type FROM authors.images
-             WHERE author_key = $1 AND folder = $2 AND role = $3
+             WHERE author_key = $1 AND book_id = $2 AND role = $3
              LIMIT 1`,
-            [authorKey, folder, role]
+            [authorKey, parseInt(folder, 10), role]
         );
 
         if (result.rows.length === 0) {

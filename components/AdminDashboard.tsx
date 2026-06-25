@@ -16,8 +16,7 @@ type Props = {
 
 type EditingBook = {
     authorKey: string;
-    bookId: string;
-    isNew: boolean;
+    bookId: number | null;  // null = new book
     title: string;
     description: string;
     purchaseLink: string;
@@ -28,8 +27,7 @@ type EditingBook = {
 
 const emptyBook = (authorKey: string): EditingBook => ({
     authorKey,
-    bookId: '',
-    isNew: true,
+    bookId: null,
     title: '',
     description: '',
     purchaseLink: '',
@@ -59,8 +57,7 @@ export default function AdminDashboardClient({ allBooks }: Props) {
     function startEdit(authorKey: string, book: Book) {
         setEditing({
             authorKey,
-            bookId: book.folder,
-            isNew: false,
+            bookId: book.id,
             title: book.title,
             description: book.description,
             purchaseLink: book.purchaseLink,
@@ -80,7 +77,9 @@ export default function AdminDashboardClient({ allBooks }: Props) {
 
         const formData = new FormData();
         formData.append('authorKey', editing.authorKey);
-        formData.append('bookId', editing.bookId);
+        if (editing.bookId !== null) {
+            formData.append('bookId', String(editing.bookId));
+        }
         formData.append('title', editing.title);
         formData.append('description', editing.description);
         formData.append('purchaseLink', editing.purchaseLink);
@@ -104,6 +103,20 @@ export default function AdminDashboardClient({ allBooks }: Props) {
         }
 
         setSaving(false);
+    }
+
+    async function handleDelete(authorKey: string, bookId: number) {
+        if (!confirm('Delete this book? This cannot be undone.')) return;
+
+        const res = await fetch('/api/admin/books', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ authorKey, bookId }),
+        });
+
+        if (res.ok) {
+            router.refresh();
+        }
     }
 
     const inputStyle = { borderColor: '#d4c9be', color: '#2c2c2c', backgroundColor: '#ffffff' };
@@ -156,17 +169,28 @@ export default function AdminDashboardClient({ allBooks }: Props) {
                                             <p className="font-medium" style={{ color: '#2c2c2c' }}>
                                                 {book.title || '(untitled)'}
                                             </p>
-                                            <p className="text-sm mt-0.5" style={{ color: '#8c7b6b' }}>
-                                                {book.folder} {book.comingSoon ? '· Coming Soon' : ''}
-                                            </p>
+                                            {book.comingSoon && (
+                                                <p className="text-sm mt-0.5" style={{ color: '#8c7b6b' }}>
+                                                    Coming Soon
+                                                </p>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={() => startEdit(author.key, book)}
-                                            className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
-                                            style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
-                                        >
-                                            Edit
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => startEdit(author.key, book)}
+                                                className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
+                                                style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(author.key, book.id)}
+                                                className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
+                                                style={{ borderColor: '#f4a4a4', color: '#c0392b' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -185,24 +209,10 @@ export default function AdminDashboardClient({ allBooks }: Props) {
                             style={{ backgroundColor: '#faf6f1', maxHeight: '90vh', color: '#2c2c2c' }}
                         >
                             <h2 className="text-xl font-bold mb-6" style={{ color: '#2c2c2c' }}>
-                                {editing.isNew ? 'New Book' : 'Edit Book'}
+                                {editing.bookId === null ? 'New Book' : 'Edit Book'}
                             </h2>
 
                             <div className="space-y-5">
-
-                                {/* Folder name — only for new books */}
-                                {editing.isNew && (
-                                    <Field label="Folder name (e.g. book-02)">
-                                        <input
-                                            type="text"
-                                            placeholder="book-02"
-                                            value={editing.bookId}
-                                            onChange={e => setEditing({ ...editing, bookId: e.target.value })}
-                                            className="w-full border rounded-lg px-4 py-2 text-base outline-none"
-                                            style={inputStyle}
-                                        />
-                                    </Field>
-                                )}
 
                                 <Field label="Title">
                                     <input

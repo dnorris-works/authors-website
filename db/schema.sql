@@ -4,28 +4,26 @@
 CREATE TABLE IF NOT EXISTS authors.books (
     id            SERIAL PRIMARY KEY,
     author_key    TEXT NOT NULL,
-    folder        TEXT NOT NULL,
     title         TEXT NOT NULL DEFAULT '',
     description   TEXT NOT NULL DEFAULT '',
     purchase_link TEXT NOT NULL DEFAULT '',
     coming_soon   BOOLEAN NOT NULL DEFAULT FALSE,
     sort_order    INTEGER NOT NULL DEFAULT 0,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (author_key, folder)
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS authors.images (
     id          SERIAL PRIMARY KEY,
     author_key  TEXT NOT NULL,
-    folder      TEXT,              -- NULL for author-level images (logo, hero, favicon)
+    book_id     INTEGER REFERENCES authors.books(id) ON DELETE CASCADE,
     role        TEXT NOT NULL,     -- 'cover' | 'logo' | 'hero' | 'favicon'
     filename    TEXT NOT NULL,
     mime_type   TEXT NOT NULL,
     data        BYTEA NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (author_key, folder, role)
+    UNIQUE (author_key, book_id, role)
 );
 
 -- Auto-update updated_at on change
