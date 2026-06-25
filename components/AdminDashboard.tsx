@@ -22,7 +22,7 @@ type EditingBook = {
     purchaseLink: string;
     comingSoon: boolean;
     coverFile: File | null;
-    existingCover: string;
+    existingCoverUrl: string;
 };
 
 const emptyBook = (authorKey: string): EditingBook => ({
@@ -33,7 +33,7 @@ const emptyBook = (authorKey: string): EditingBook => ({
     purchaseLink: '',
     comingSoon: false,
     coverFile: null,
-    existingCover: '',
+    existingCoverUrl: '',
 });
 
 export default function AdminDashboardClient({ allBooks }: Props) {
@@ -57,13 +57,13 @@ export default function AdminDashboardClient({ allBooks }: Props) {
     function startEdit(authorKey: string, book: Book) {
         setEditing({
             authorKey,
-            bookId: book.id,
+            bookId: book.folder,
             title: book.title,
             description: book.description,
             purchaseLink: book.purchaseLink,
             comingSoon: book.comingSoon,
             coverFile: null,
-            existingCover: book.cover,
+            existingCoverUrl: book.coverUrl,
         });
         setError('');
         setSuccess('');
@@ -152,7 +152,7 @@ export default function AdminDashboardClient({ allBooks }: Props) {
                                                 {book.title || '(untitled)'}
                                             </p>
                                             <p className="text-sm mt-0.5" style={{ color: '#8c7b6b' }}>
-                                                {book.id} {book.comingSoon ? '· Coming Soon' : ''}
+                                                {book.folder} {book.comingSoon ? '· Coming Soon' : ''}
                                             </p>
                                         </div>
                                         <button
@@ -231,9 +231,9 @@ export default function AdminDashboardClient({ allBooks }: Props) {
                                 </Field>
 
                                 <Field label="Cover image">
-                                    {editing.existingCover && (
+                                    {editing.existingCoverUrl && (
                                         <p className="text-sm mb-2" style={{ color: '#8c7b6b' }}>
-                                            Current: {editing.existingCover}
+                                            Current cover on file
                                         </p>
                                     )}
                                     <input
