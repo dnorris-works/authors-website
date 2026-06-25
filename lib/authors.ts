@@ -13,15 +13,15 @@ export type Author = {
 };
 
 export const authors: Record<string, Author> = {
-    'dallenorris': {
-        key: 'dallenorris',
+    'dallennorris': {
+        key: 'dallennorris',
         name: 'D. Allen Norris',
         tagline: 'Thinker, Storyteller, Author',
         bio: 'D. Allen Norris has always been drawn to the spaces where certainty frays—where the equations stop yielding answers and the questions begin. A lifelong fascination with science shaped an early view of the world as mechanism: elegant, deterministic, governed by laws that could be tested and known. That foundation held until it didn\'t. Something in the strangeness of the data—perhaps the observer effect, perhaps the fine-tuning problem, perhaps simply the stubborn mystery of consciousness—refused to resolve into matter alone.\n\nThe path to Catholicism was not a retreat from rigor but an extension of it. The Church\'s own history with science (Gregor Mendel in genetics, Georges Lemaître proposing the Big Bang, the Vatican Observatory still scanning the sky) offered permission to believe that faith and inquiry could coexist, even sharpen each other. The conversion was intellectual before it was devotional, and it remains both.',
         domain: 'dallennorris.com',
-        heroImage: '/authors/dallenorris/hero.jpg',
-        logo: '/authors/dallenorris/logo.png',
-        favicon: '/authors/dallenorris/favicon.png',
+        heroImage: '/authors/dallennorris/hero.jpg',
+        logo: '/authors/dallennorris/logo.png',
+        favicon: '/authors/dallennorris/favicon.png',
         accentColor: '#6b4c3b',
         mailerLiteAccount: '2370300',
         mailerLiteForm: 'SeVfZH',
