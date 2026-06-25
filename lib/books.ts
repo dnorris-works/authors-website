@@ -1,52 +1,39 @@
-import fs from 'fs';
-import path from 'path';
+import { getPool } from './db';
 
 export type Book = {
     id: string;
+    folder: string;
     title: string;
     description: string;
     purchaseLink: string;
-    cover: string;
     coverUrl: string;
     comingSoon: boolean;
+    sortOrder: number;
 };
 
-export function getBooksForAuthor(authorKey: string): Book[] {
-    const booksDir = path.join(process.cwd(), 'content', authorKey, 'books');
-
-    if (!fs.existsSync(booksDir)) {
+export async function getBooksForAuthor(authorKey: string): Promise<Book[]> {
+    if (!process.env.DATABASE_URL) {
+        // Local dev without a database — return empty
         return [];
     }
 
-    const entries = fs.readdirSync(booksDir, { withFileTypes: true });
-    const bookDirs = entries
-        .filter(e => e.isDirectory())
-        .map(e => e.name)
-        .sort();
+    const pool = getPool();
+    const result = await pool.query(
+        `SELECT id, folder, title, description, purchase_link, coming_soon, sort_order
+         FROM authors.books
+         WHERE author_key = $1
+         ORDER BY sort_order ASC, created_at ASC`,
+        [authorKey]
+    );
 
-    const books: Book[] = [];
-
-    for (const dir of bookDirs) {
-        const metaPath = path.join(booksDir, dir, 'meta.json');
-        if (!fs.existsSync(metaPath)) continue;
-
-        try {
-            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            books.push({
-                id: dir,
-                title: meta.title || '',
-                description: meta.description || '',
-                purchaseLink: meta.purchaseLink || '',
-                cover: meta.cover || '',
-                coverUrl: meta.cover
-                    ? `/authors/${authorKey}/books/${dir}/${meta.cover}`
-                    : `/authors/${authorKey}/logo.png`,
-                comingSoon: meta.comingSoon || false,
-            });
-        } catch {
-            console.warn(`Failed to parse meta.json for ${authorKey}/${dir}`);
-        }
-    }
-
-    return books;
+    return result.rows.map(row => ({
+        id: String(row.id),
+        folder: row.folder,
+        title: row.title,
+        description: row.description,
+        purchaseLink: row.purchase_link,
+        coverUrl: `/api/images/${authorKey}/${row.folder}/cover`,
+        comingSoon: row.coming_soon,
+        sortOrder: row.sort_order,
+    }));
 }

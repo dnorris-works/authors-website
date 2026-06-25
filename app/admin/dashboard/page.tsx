@@ -8,10 +8,12 @@ export default async function DashboardPage() {
     const authed = await isAuthenticated();
     if (!authed) redirect('/admin');
 
-    const allBooks = Object.values(authors).map(author => ({
-        author,
-        books: getBooksForAuthor(author.key),
-    }));
+    const allBooks = await Promise.all(
+        Object.values(authors).map(async author => ({
+            author,
+            books: await getBooksForAuthor(author.key),
+        }))
+    );
 
     return <AdminDashboardClient allBooks={allBooks} />;
 }

@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthenticated } from '@/lib/auth';
-import fs from 'fs';
-import path from 'path';
+import { getPool } from '@/lib/db';
+
+export async function GET(req: NextRequest) {
+    const authed = await isAuthenticated();
+    if (!authed) {
+        return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const authorKey = searchParams.get('authorKey');
+
+    const pool = getPool();
+    const result = await pool.query(
+        `SELECT id, author_key, folder, title, description, purchase_link, coming_soon, sort_order
+         FROM authors.books
+         WHERE author_key = $1
+         ORDER BY sort_order ASC, created_at ASC`,
+        [authorKey]
+    );
+
+    return NextResponse.json(result.rows);
+}
 
 export async function POST(req: NextRequest) {
     const authed = await isAuthenticated();
@@ -11,50 +31,77 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const authorKey = formData.get('authorKey') as string;
-    const bookId = formData.get('bookId') as string;
+    const folder = formData.get('bookId') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const purchaseLink = formData.get('purchaseLink') as string;
     const comingSoon = formData.get('comingSoon') === 'true';
+    const sortOrder = parseInt(formData.get('sortOrder') as string ?? '0', 10);
     const coverFile = formData.get('cover') as File | null;
 
-    if (!authorKey || !bookId) {
+    if (!authorKey || !folder) {
         return NextResponse.json({ error: 'authorKey and bookId are required.' }, { status: 400 });
     }
 
-    const bookDir = path.join(process.cwd(), 'content', authorKey, 'books', bookId);
-    fs.mkdirSync(bookDir, { recursive: true });
+    const pool = getPool();
 
-    // Handle cover image upload
-    let coverFilename = '';
+    // Upsert book record
+    await pool.query(
+        `INSERT INTO authors.books (author_key, folder, title, description, purchase_link, coming_soon, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (author_key, folder)
+         DO UPDATE SET
+             title = EXCLUDED.title,
+             description = EXCLUDED.description,
+             purchase_link = EXCLUDED.purchase_link,
+             coming_soon = EXCLUDED.coming_soon,
+             sort_order = EXCLUDED.sort_order`,
+        [authorKey, folder, title, description, purchaseLink, comingSoon, sortOrder]
+    );
+
+    // Save cover image if provided
     if (coverFile && coverFile.size > 0) {
-        const ext = path.extname(coverFile.name) || '.jpg';
-        coverFilename = `cover${ext}`;
         const buffer = Buffer.from(await coverFile.arrayBuffer());
-        fs.writeFileSync(path.join(bookDir, coverFilename), buffer);
+        const mimeType = coverFile.type || 'image/jpeg';
 
-        // Also copy to public for serving
-        const publicDir = path.join(process.cwd(), 'public', 'authors', authorKey, 'books', bookId);
-        fs.mkdirSync(publicDir, { recursive: true });
-        fs.writeFileSync(path.join(publicDir, coverFilename), buffer);
-    } else {
-        // Keep existing cover filename if no new file uploaded
-        const metaPath = path.join(bookDir, 'meta.json');
-        if (fs.existsSync(metaPath)) {
-            const existing = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-            coverFilename = existing.cover || '';
-        }
+        await pool.query(
+            `INSERT INTO authors.images (author_key, folder, role, filename, mime_type, data)
+             VALUES ($1, $2, 'cover', $3, $4, $5)
+             ON CONFLICT (author_key, folder, role)
+             DO UPDATE SET
+                 filename = EXCLUDED.filename,
+                 mime_type = EXCLUDED.mime_type,
+                 data = EXCLUDED.data`,
+            [authorKey, folder, coverFile.name, mimeType, buffer]
+        );
     }
 
-    const meta = {
-        title,
-        description,
-        purchaseLink,
-        cover: coverFilename,
-        comingSoon,
-    };
+    return NextResponse.json({ ok: true });
+}
 
-    fs.writeFileSync(path.join(bookDir, 'meta.json'), JSON.stringify(meta, null, 4));
+export async function DELETE(req: NextRequest) {
+    const authed = await isAuthenticated();
+    if (!authed) {
+        return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
+    const { authorKey, folder } = await req.json();
+
+    if (!authorKey || !folder) {
+        return NextResponse.json({ error: 'authorKey and folder are required.' }, { status: 400 });
+    }
+
+    const pool = getPool();
+
+    await pool.query(
+        `DELETE FROM authors.books WHERE author_key = $1 AND folder = $2`,
+        [authorKey, folder]
+    );
+
+    await pool.query(
+        `DELETE FROM authors.images WHERE author_key = $1 AND folder = $2`,
+        [authorKey, folder]
+    );
 
     return NextResponse.json({ ok: true });
 }

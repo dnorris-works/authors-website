@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { getAuthorByDomain } from '@/lib/authors';
+import { getAuthorByDomain, getAuthorByKey } from '@/lib/authors';
 import { getBooksForAuthor } from '@/lib/books';
 import AuthorPage from '@/components/AuthorPage';
 import { notFound } from 'next/navigation';
@@ -17,7 +17,6 @@ export default async function Home() {
     let author = getAuthorByDomain(domain);
 
     if (!author && devAuthor) {
-        const { getAuthorByKey } = await import('@/lib/authors');
         author = getAuthorByKey(devAuthor);
     }
 
@@ -25,7 +24,7 @@ export default async function Home() {
         notFound();
     }
 
-    const books = getBooksForAuthor(author.key);
+    const books = await getBooksForAuthor(author.key);
 
     return <AuthorPage author={author} books={books} />;
 }
