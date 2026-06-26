@@ -73,6 +73,11 @@ export default function AuthorPage({ author, books }: Props) {
                             <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '3rem', color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
                                 {author.tagline}
                             </h1>
+                            {author.subtagline && (
+                                <p style={{ marginTop: '8px', fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
+                                    {author.subtagline}
+                                </p>
+                            )}
                         </div>
                     </section>
                 ) : (
@@ -80,6 +85,11 @@ export default function AuthorPage({ author, books }: Props) {
                         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '3rem', color: '#2c2c2c' }}>
                             {author.tagline}
                         </h1>
+                        {author.subtagline && (
+                            <p style={{ marginTop: '8px', fontSize: '1.1rem', color: '#8c7b6b', fontStyle: 'italic' }}>
+                                {author.subtagline}
+                            </p>
+                        )}
                     </section>
                 )}
 
