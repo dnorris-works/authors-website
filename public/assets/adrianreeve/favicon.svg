@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" rx="16" fill="#1e1e2e"/>
+  <!-- Left ring: slate -->
+  <circle cx="38" cy="50" r="26" fill="none" stroke="#4a5568" stroke-width="8"/>
+  <!-- Right ring: violet -->
+  <circle cx="62" cy="50" r="26" fill="none" stroke="#6b46c1" stroke-width="8"/>
+  <!-- Heart in overlap zone -->
+  <path d="M50,62
+    C50,62 32,48 32,38
+    C32,30 38,26 44,30
+    C46,31 48,33 50,36
+    C52,33 54,31 56,30
+    C62,26 68,30 68,38
+    C68,48 50,62 50,62 Z"
+    fill="#6b46c1"/>
+</svg>

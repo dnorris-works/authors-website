@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import type { Author } from '@/lib/authors';
 import type { Book } from '@/lib/books';
-import Image from 'next/image';
 
 type Props = {
     author: Author;
@@ -20,15 +19,15 @@ export default function AuthorPage({ author, books }: Props) {
             <header className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     {author.logo && (
-                        <Image
+                        <img
                             src={author.logo}
-                            alt={`${author.name} logo`}
-                            width={32}
-                            height={32}
-                            className="object-contain"
+                            alt={author.name}
+                            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
                         />
                     )}
-                    <span className="font-serif font-bold text-xl">{author.name}</span>
+                    <span style={{ fontFamily: 'Georgia, serif', fontWeight: 'bold', fontSize: '1.25rem' }}>
+                        {author.name}
+                    </span>
                 </div>
                 <nav>
                     <button
@@ -45,31 +44,40 @@ export default function AuthorPage({ author, books }: Props) {
                 {/* Hero */}
                 {author.heroImage ? (
                     <section
-                        className="max-w-6xl mx-auto mx-4 rounded-xl overflow-hidden relative"
-                        style={{ minHeight: '500px', margin: '0 24px' }}
+                        style={{
+                            margin: '0 24px',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            minHeight: '500px',
+                            maxWidth: '1152px',
+                            marginLeft: 'auto',
+                            marginRight: 'auto',
+                        }}
                     >
-                        <Image
+                        <img
                             src={author.heroImage}
                             alt={author.name}
-                            fill
-                            className="object-cover"
-                            priority
+                            style={{ width: '100%', height: '500px', objectFit: 'cover', display: 'block' }}
                         />
                         <div
-                            className="absolute bottom-0 left-0 w-1/2 p-10 flex flex-col justify-end"
                             style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                width: '50%',
+                                padding: '40px',
                                 background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
-                                minHeight: '50%',
                             }}
                         >
-                            <h1 className="font-serif text-5xl text-white mb-3 drop-shadow">
+                            <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '3rem', color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
                                 {author.tagline}
                             </h1>
                         </div>
                     </section>
                 ) : (
                     <section className="max-w-6xl mx-auto px-6 py-12">
-                        <h1 className="font-serif text-5xl" style={{ color: '#2c2c2c' }}>
+                        <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '3rem', color: '#2c2c2c' }}>
                             {author.tagline}
                         </h1>
                     </section>
@@ -79,43 +87,46 @@ export default function AuthorPage({ author, books }: Props) {
                 {books.length > 0 && (
                     <section className="max-w-6xl mx-auto px-6 mt-16">
                         <div
-                            className="grid gap-8"
                             style={{
+                                display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                gap: '2rem',
                                 maxWidth: '800px',
                             }}
                         >
                             {books.map(book => (
-                                <div key={book.id} className="text-center">
+                                <div key={book.id} style={{ textAlign: 'center' }}>
                                     {book.comingSoon ? (
                                         <div
-                                            className="w-full rounded-lg overflow-hidden shadow-md flex items-center justify-center mx-auto"
                                             style={{
+                                                width: '100%',
                                                 maxWidth: '180px',
                                                 aspectRatio: '2/3',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                margin: '0 auto',
                                                 background: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
                                             }}
                                         >
-                                            <span className="font-serif text-white opacity-80 text-lg">
+                                            <span style={{ fontFamily: 'Georgia, serif', color: 'white', opacity: 0.8 }}>
                                                 Coming Soon
                                             </span>
                                         </div>
                                     ) : book.purchaseLink ? (
-                                        <a
-                                            href={book.purchaseLink}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block group"
-                                        >
-                                            <BookCover book={book} author={author} />
+                                        <a href={book.purchaseLink} target="_blank" rel="noopener noreferrer">
+                                            <BookCover book={book} />
                                         </a>
                                     ) : (
-                                        <BookCover book={book} author={author} />
+                                        <BookCover book={book} />
                                     )}
-                                    <p className="mt-3 text-sm font-medium">{book.title}</p>
+                                    <p style={{ marginTop: '12px', fontSize: '0.875rem', fontWeight: '500' }}>
+                                        {book.title}
+                                    </p>
                                     <div
-                                        className="mt-1 text-sm text-left"
-                                        style={{ color: '#8c7b6b' }}
+                                        style={{ marginTop: '4px', fontSize: '0.875rem', textAlign: 'left', color: '#8c7b6b' }}
                                         dangerouslySetInnerHTML={{ __html: book.description }}
                                     />
                                 </div>
@@ -130,7 +141,7 @@ export default function AuthorPage({ author, books }: Props) {
                 className="max-w-6xl mx-auto px-6 py-8 mt-16 text-center"
                 style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}
             >
-                <p className="text-sm" style={{ color: '#8c7b6b' }}>
+                <p style={{ fontSize: '0.875rem', color: '#8c7b6b' }}>
                     Published by Deep Field Press
                 </p>
             </footer>
@@ -155,12 +166,14 @@ export default function AuthorPage({ author, books }: Props) {
                         >
                             &times;
                         </button>
-                        <h2 className="font-serif text-2xl mb-4">About</h2>
-                        <div className="text-base leading-relaxed" style={{ color: '#2c2c2c' }}>
+                        <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', marginBottom: '1rem' }}>
+                            About
+                        </h2>
+                        <div style={{ fontSize: '1rem', lineHeight: '1.75', color: '#2c2c2c' }}>
                             {author.bio.split('\n\n').map((para, i) => (
-                                <p key={i} className={i > 0 ? 'mt-4' : ''}>
-                                    <strong>{i === 0 ? author.name : ''}</strong>
-                                    {i === 0 ? para.replace(author.name, '') : para}
+                                <p key={i} style={{ marginTop: i > 0 ? '1rem' : '0' }}>
+                                    {i === 0 && <strong>{author.name} </strong>}
+                                    {i === 0 ? para.replace(author.name, '').trim() : para}
                                 </p>
                             ))}
                         </div>
@@ -171,20 +184,24 @@ export default function AuthorPage({ author, books }: Props) {
     );
 }
 
-function BookCover({ book, author }: { book: Book; author: Author }) {
+function BookCover({ book }: { book: Book }) {
     return (
         <div
-            className="rounded-lg overflow-hidden shadow-md mx-auto transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-            style={{ maxWidth: '180px', aspectRatio: '2/3', position: 'relative' }}
+            style={{
+                maxWidth: '180px',
+                aspectRatio: '2/3',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                margin: '0 auto',
+                position: 'relative',
+            }}
         >
-            <Image
+            <img
                 src={book.coverUrl}
-                alt={`${book.title} cover`}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                    (e.target as HTMLImageElement).src = author.logo ?? '/favicon.ico';
-                }}
+                alt={book.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
         </div>
     );
