@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Author } from '@/lib/authors';
 import type { Book } from '@/lib/books';
 
@@ -11,6 +11,18 @@ type Props = {
 
 export default function AuthorPage({ author, books }: Props) {
     const [showAbout, setShowAbout] = useState(false);
+
+    // Load MailerLite script if account is configured
+    useEffect(() => {
+        if (!author.mailerLiteAccount) return;
+        if (document.getElementById('mailerlite-script')) return;
+
+        const script = document.createElement('script');
+        script.id = 'mailerlite-script';
+        script.async = true;
+        script.innerHTML = `(function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');ml('account', '${author.mailerLiteAccount}');`;
+        document.head.appendChild(script);
+    }, [author.mailerLiteAccount]);
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: '#faf6f1', color: '#2c2c2c' }}>
@@ -90,6 +102,41 @@ export default function AuthorPage({ author, books }: Props) {
                                 {author.subtagline}
                             </p>
                         )}
+                    </section>
+                )}
+
+                {/* Lead Magnet */}
+                {author.mailerLiteAccount && author.mailerLiteForm && author.leadMagnetImage && (
+                    <section
+                        className="max-w-6xl mx-auto px-6 mt-16"
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '3rem',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                padding: '2.5rem',
+                                boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+                                maxWidth: '700px',
+                            }}
+                        >
+                            <img
+                                src={author.leadMagnetImage}
+                                alt="Free eBook"
+                                style={{ width: '120px', flexShrink: 0, borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+                            />
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', color: '#2c2c2c', marginBottom: '0.5rem' }}>
+                                    Get your free eBook
+                                </h2>
+                                <div className="ml-embedded" data-form={author.mailerLiteForm} />
+                                <p style={{ fontSize: '0.75rem', color: '#8c7b6b', marginTop: '0.5rem' }}>
+                                    100% no spam
+                                </p>
+                            </div>
+                        </div>
                     </section>
                 )}
 

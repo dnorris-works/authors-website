@@ -9,6 +9,7 @@ export type Author = {
     logo: string | null;
     favicon: string;
     accentColor: string;
+    leadMagnetImage: string | null;
     mailerLiteAccount: string | null;
     mailerLiteForm: string | null;
 };
@@ -25,6 +26,7 @@ export const authors: Record<string, Author> = {
         logo: '/assets/dallennorris/logo.png',
         favicon: '/assets/dallennorris/favicon.png',
         accentColor: '#6b4c3b',
+        leadMagnetImage: '/assets/dallennorris/witness-persists.jpg',
         mailerLiteAccount: '2370300',
         mailerLiteForm: 'SeVfZH',
     },
@@ -39,6 +41,7 @@ export const authors: Record<string, Author> = {
         logo: '/assets/adrianreeve/logo.svg',
         favicon: '/assets/adrianreeve/favicon.svg',
         accentColor: '#6b4c3b',
+        leadMagnetImage: null,
         mailerLiteAccount: null,
         mailerLiteForm: null,
     },
