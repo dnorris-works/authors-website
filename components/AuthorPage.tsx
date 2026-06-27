@@ -57,7 +57,7 @@ export default function AuthorPage({ author, books }: Props) {
                 {author.heroImage ? (
                     <section
                         style={{
-                            margin: '0 24px',
+                            margin: '24px auto',
                             borderRadius: '12px',
                             overflow: 'hidden',
                             position: 'relative',
@@ -93,15 +93,54 @@ export default function AuthorPage({ author, books }: Props) {
                         </div>
                     </section>
                 ) : (
-                    <section className="max-w-6xl mx-auto px-6 py-12">
-                        <h1 style={{ fontFamily: 'Georgia, serif', fontSize: '3rem', color: '#2c2c2c' }}>
-                            {author.tagline}
-                        </h1>
-                        {author.subtagline && (
-                            <p style={{ marginTop: '8px', fontSize: '1.1rem', color: '#8c7b6b', fontStyle: 'italic' }}>
-                                {author.subtagline}
+                    <section
+                        style={{
+                            margin: '24px auto',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            minHeight: '500px',
+                            maxWidth: '1152px',
+                            backgroundColor: author.accentColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <div style={{ textAlign: 'center', padding: '80px 40px' }}>
+                            <p style={{
+                                fontFamily: 'system-ui, sans-serif',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: 'rgba(255,255,255,0.6)',
+                                margin: '0 0 28px',
+                            }}>
+                                {author.tagline}
                             </p>
-                        )}
+                            <h1 style={{
+                                fontFamily: 'Georgia, serif',
+                                fontSize: '4.5rem',
+                                fontWeight: 'normal',
+                                color: '#ffffff',
+                                margin: '0',
+                                lineHeight: '1.1',
+                                letterSpacing: '0.02em',
+                            }}>
+                                {author.name}
+                            </h1>
+                            {author.subtagline && (
+                                <p style={{
+                                    fontFamily: 'Georgia, serif',
+                                    fontSize: '1.25rem',
+                                    color: 'rgba(255,255,255,0.75)',
+                                    margin: '28px 0 0',
+                                    fontStyle: 'italic',
+                                }}>
+                                    {author.subtagline}
+                                </p>
+                            )}
+                        </div>
                     </section>
                 )}
 
@@ -165,7 +204,7 @@ export default function AuthorPage({ author, books }: Props) {
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 margin: '0 auto',
-                                                background: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+                                                background: `linear-gradient(135deg, ${author.accentColor}cc, ${author.accentColor})`,
                                             }}
                                         >
                                             <span style={{ fontFamily: 'Georgia, serif', color: 'white', opacity: 0.8 }}>
