@@ -98,7 +98,7 @@ export default function AuthorPage({ author, books }: Props) {
                             margin: '24px auto',
                             borderRadius: '12px',
                             overflow: 'hidden',
-                            minHeight: '500px',
+                            minHeight: '250px',
                             maxWidth: '1152px',
                             backgroundColor: author.accentColor,
                             display: 'flex',
@@ -106,7 +106,7 @@ export default function AuthorPage({ author, books }: Props) {
                             justifyContent: 'center',
                         }}
                     >
-                        <div style={{ textAlign: 'center', padding: '80px 40px' }}>
+                        <div style={{ textAlign: 'center', padding: '40px 40px' }}>
                             <p style={{
                                 fontFamily: 'system-ui, sans-serif',
                                 fontSize: '0.8rem',
