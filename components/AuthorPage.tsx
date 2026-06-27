@@ -184,47 +184,49 @@ export default function AuthorPage({ author, books }: Props) {
                     <section className="max-w-6xl mx-auto px-6 mt-16">
                         <div
                             style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                                display: 'flex',
+                                flexDirection: 'column',
                                 gap: '2rem',
                                 maxWidth: '800px',
                             }}
                         >
                             {books.map(book => (
-                                <div key={book.id} style={{ textAlign: 'center' }}>
-                                    {book.comingSoon ? (
-                                        <div
-                                            style={{
-                                                width: '100%',
-                                                maxWidth: '180px',
-                                                aspectRatio: '2/3',
-                                                borderRadius: '8px',
-                                                overflow: 'hidden',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                margin: '0 auto',
-                                                background: `linear-gradient(135deg, ${author.accentColor}cc, ${author.accentColor})`,
-                                            }}
-                                        >
-                                            <span style={{ fontFamily: 'Georgia, serif', color: 'white', opacity: 0.8 }}>
-                                                Coming Soon
-                                            </span>
-                                        </div>
-                                    ) : book.purchaseLink ? (
-                                        <a href={book.purchaseLink} target="_blank" rel="noopener noreferrer">
+                                <div key={book.id} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                                    <div style={{ flexShrink: 0 }}>
+                                        {book.comingSoon ? (
+                                            <div
+                                                style={{
+                                                    width: '180px',
+                                                    aspectRatio: '2/3',
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    background: `linear-gradient(135deg, ${author.accentColor}cc, ${author.accentColor})`,
+                                                }}
+                                            >
+                                                <span style={{ fontFamily: 'Georgia, serif', color: 'white', opacity: 0.8 }}>
+                                                    Coming Soon
+                                                </span>
+                                            </div>
+                                        ) : book.purchaseLink ? (
+                                            <a href={book.purchaseLink} target="_blank" rel="noopener noreferrer">
+                                                <BookCover book={book} />
+                                            </a>
+                                        ) : (
                                             <BookCover book={book} />
-                                        </a>
-                                    ) : (
-                                        <BookCover book={book} />
-                                    )}
-                                    <p style={{ marginTop: '12px', fontSize: '0.875rem', fontWeight: '500' }}>
-                                        {book.title}
-                                    </p>
-                                    <div
-                                        style={{ marginTop: '4px', fontSize: '0.875rem', textAlign: 'left', color: '#8c7b6b' }}
-                                        dangerouslySetInnerHTML={{ __html: book.description }}
-                                    />
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '1rem', fontWeight: '500' }}>
+                                            {book.title}
+                                        </p>
+                                        <div
+                                            style={{ marginTop: '8px', fontSize: '0.875rem', color: '#8c7b6b' }}
+                                            dangerouslySetInnerHTML={{ __html: book.description }}
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>
