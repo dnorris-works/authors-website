@@ -185,7 +185,7 @@ export default function AuthorPage({ author, books }: Props) {
                         <div
                             style={{
                                 display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                                 gap: '2rem',
                                 maxWidth: '800px',
                             }}
