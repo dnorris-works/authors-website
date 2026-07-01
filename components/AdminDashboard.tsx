@@ -36,6 +36,16 @@ type EditingDownload = {
     isNew: boolean;
 };
 
+type EditingProfile = {
+    authorKey: string;
+    name: string;
+    tagline: string;
+    subtagline: string;
+    bio: string;
+    photoFile: File | null;
+    existingPhotoUrl: string | null;
+};
+
 const emptyBook = (authorKey: string): EditingBook => ({
     authorKey,
     bookId: null,
@@ -61,6 +71,7 @@ export default function AdminDashboardClient({ allData }: Props) {
     const [editing, setEditing] = useState<EditingBook | null>(null);
     const [viewing, setViewing] = useState<{ authorKey: string; book: Book } | null>(null);
     const [editingDownload, setEditingDownload] = useState<EditingDownload | null>(null);
+    const [editingProfile, setEditingProfile] = useState<EditingProfile | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -183,6 +194,47 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (res.ok) router.refresh();
     }
 
+    function startEditProfile(author: Author) {
+        setEditingProfile({
+            authorKey: author.key,
+            name: author.name,
+            tagline: author.tagline,
+            subtagline: author.subtagline ?? '',
+            bio: author.bio,
+            photoFile: null,
+            existingPhotoUrl: author.photoUrl,
+        });
+        setError('');
+        setSuccess('');
+    }
+
+    async function handleSaveProfile() {
+        if (!editingProfile) return;
+        setSaving(true);
+        setError('');
+        setSuccess('');
+
+        const formData = new FormData();
+        formData.append('authorKey', editingProfile.authorKey);
+        formData.append('name', editingProfile.name);
+        formData.append('tagline', editingProfile.tagline);
+        formData.append('subtagline', editingProfile.subtagline);
+        formData.append('bio', editingProfile.bio);
+        if (editingProfile.photoFile) formData.append('photo', editingProfile.photoFile);
+
+        const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
+
+        if (res.ok) {
+            setSuccess('Profile saved.');
+            setEditingProfile(null);
+            router.refresh();
+        } else {
+            const data = await res.json();
+            setError(data.error ?? 'Something went wrong.');
+        }
+        setSaving(false);
+    }
+
     const inputStyle = { borderColor: '#d4c9be', color: '#2c2c2c', backgroundColor: '#ffffff' };
 
     return (
@@ -205,9 +257,33 @@ export default function AdminDashboardClient({ allData }: Props) {
                 {allData.map(({ author, books, downloads }) => (
                     <section key={author.key} className="mb-16">
 
-                        <h2 className="text-2xl font-bold mb-8" style={{ color: '#2c2c2c' }}>
-                            {author.name}
-                        </h2>
+                        <div className="flex justify-between items-center mb-8">
+                            <div className="flex items-center gap-4">
+                                {author.photoUrl && (
+                                    <img
+                                        src={author.photoUrl}
+                                        alt={author.name}
+                                        style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '9999px' }}
+                                    />
+                                )}
+                                <a
+                                    href={`https://${author.domain}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-2xl font-bold hover:underline"
+                                    style={{ color: '#2c2c2c' }}
+                                >
+                                    {author.name || '(unnamed)'}
+                                </a>
+                            </div>
+                            <button
+                                onClick={() => startEditProfile(author)}
+                                className="text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-60"
+                                style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
+                            >
+                                Edit Profile
+                            </button>
+                        </div>
 
                         {/* Books */}
                         <div className="mb-8">
@@ -498,6 +574,54 @@ export default function AdminDashboardClient({ allData }: Props) {
                                         {saving ? 'Saving…' : 'Save'}
                                     </button>
                                     <button onClick={() => setEditingDownload(null)} className="flex-1 py-2 rounded-lg border font-medium transition-opacity hover:opacity-60" style={{ borderColor: '#d4c9be', color: '#8c7b6b' }}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Edit profile form */}
+                {editingProfile && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                        <div
+                            className="w-full max-w-lg rounded-xl p-8 shadow-2xl overflow-y-auto"
+                            style={{ backgroundColor: '#faf6f1', maxHeight: '90vh', color: '#2c2c2c' }}
+                        >
+                            <h2 className="text-xl font-bold mb-6" style={{ color: '#2c2c2c' }}>
+                                Edit Profile
+                            </h2>
+                            <div className="space-y-5">
+                                <Field label="Name">
+                                    <input type="text" value={editingProfile.name} onChange={e => setEditingProfile({ ...editingProfile, name: e.target.value })} className="w-full border rounded-lg px-4 py-2 text-base outline-none" style={inputStyle} />
+                                </Field>
+                                <Field label="Tagline">
+                                    <input type="text" value={editingProfile.tagline} onChange={e => setEditingProfile({ ...editingProfile, tagline: e.target.value })} className="w-full border rounded-lg px-4 py-2 text-base outline-none" style={inputStyle} />
+                                </Field>
+                                <Field label="Subtagline">
+                                    <input type="text" value={editingProfile.subtagline} onChange={e => setEditingProfile({ ...editingProfile, subtagline: e.target.value })} className="w-full border rounded-lg px-4 py-2 text-base outline-none" style={inputStyle} />
+                                </Field>
+                                <Field label="Bio">
+                                    <textarea value={editingProfile.bio} onChange={e => setEditingProfile({ ...editingProfile, bio: e.target.value })} rows={8} className="w-full border rounded-lg px-4 py-2 text-base outline-none resize-y" style={inputStyle} />
+                                </Field>
+                                <Field label="Photo">
+                                    {editingProfile.existingPhotoUrl && (
+                                        <img
+                                            src={editingProfile.existingPhotoUrl}
+                                            alt=""
+                                            style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '9999px', marginBottom: '0.5rem' }}
+                                        />
+                                    )}
+                                    <input type="file" accept="image/*" onChange={e => setEditingProfile({ ...editingProfile, photoFile: e.target.files?.[0] ?? null })} className="text-sm" style={{ color: '#2c2c2c' }} />
+                                </Field>
+                                {error && <p className="text-sm text-red-600">{error}</p>}
+                                {success && <p className="text-sm text-green-600">{success}</p>}
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={handleSaveProfile} disabled={saving} className="flex-1 py-2 rounded-lg text-white font-medium transition-opacity disabled:opacity-50" style={{ backgroundColor: '#6b4c3b' }}>
+                                        {saving ? 'Saving…' : 'Save'}
+                                    </button>
+                                    <button onClick={() => setEditingProfile(null)} className="flex-1 py-2 rounded-lg border font-medium transition-opacity hover:opacity-60" style={{ borderColor: '#d4c9be', color: '#8c7b6b' }}>
                                         Cancel
                                     </button>
                                 </div>

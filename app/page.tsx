@@ -1,47 +1,45 @@
 import { headers } from 'next/headers';
-import { getAuthorByDomain, getAuthorByKey } from '@/lib/authors';
+import { getAuthorConfigByDomain, getAuthorConfigByKey } from '@/lib/authors';
+import { getAuthorProfile, toAuthor } from '@/lib/profiles';
 import { getBooksForAuthor } from '@/lib/books';
 import AuthorPage from '@/components/AuthorPage';
 import type { Metadata } from 'next';
 
-export async function generateMetadata(): Promise<Metadata> {
+async function resolveConfig() {
     const headersList = await headers();
     const hostname = headersList.get('host') ?? '';
     const domain = hostname.split(':')[0];
     const devAuthor = process.env.AUTHOR;
 
-    let author = getAuthorByDomain(domain);
-    if (!author && devAuthor) {
-        author = getAuthorByKey(devAuthor);
+    let config = getAuthorConfigByDomain(domain);
+    if (!config && devAuthor) {
+        config = getAuthorConfigByKey(devAuthor);
     }
+    return config;
+}
 
-    if (!author) {
+export async function generateMetadata(): Promise<Metadata> {
+    const config = await resolveConfig();
+
+    if (!config) {
         return { title: 'Deep Field Press' };
     }
 
+    const profile = await getAuthorProfile(config.key);
+
     return {
-        title: author.name,
-        description: author.tagline,
+        title: profile.name,
+        description: profile.tagline,
         icons: {
-            icon: author.favicon,
+            icon: config.favicon,
         },
     };
 }
 
 export default async function Home() {
-    const headersList = await headers();
-    const hostname = headersList.get('host') ?? '';
+    const config = await resolveConfig();
 
-    const domain = hostname.split(':')[0];
-    const devAuthor = process.env.AUTHOR;
-
-    let author = getAuthorByDomain(domain);
-
-    if (!author && devAuthor) {
-        author = getAuthorByKey(devAuthor);
-    }
-
-    if (!author) {
+    if (!config) {
         return (
             <div
                 className="min-h-screen flex items-center justify-center"
@@ -55,7 +53,10 @@ export default async function Home() {
         );
     }
 
-    const books = await getBooksForAuthor(author.key);
+    const [profile, books] = await Promise.all([
+        getAuthorProfile(config.key),
+        getBooksForAuthor(config.key),
+    ]);
 
-    return <AuthorPage author={author} books={books} />;
+    return <AuthorPage author={toAuthor(config, profile)} books={books} />;
 }

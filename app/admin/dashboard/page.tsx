@@ -1,6 +1,7 @@
 import { isAuthenticated } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { authors } from '@/lib/authors';
+import { authorConfigs } from '@/lib/authors';
+import { getAuthorProfile, toAuthor } from '@/lib/profiles';
 import { getBooksForAuthor } from '@/lib/books';
 import { getPool } from '@/lib/db';
 import AdminDashboardClient from '@/components/AdminDashboard';
@@ -37,11 +38,14 @@ export default async function DashboardPage() {
     if (!authed) redirect('/admin');
 
     const allData = await Promise.all(
-        Object.values(authors).map(async author => ({
-            author,
-            books: await getBooksForAuthor(author.key),
-            downloads: await getDownloadsForAuthor(author.key),
-        }))
+        Object.values(authorConfigs).map(async config => {
+            const profile = await getAuthorProfile(config.key);
+            return {
+                author: toAuthor(config, profile),
+                books: await getBooksForAuthor(config.key),
+                downloads: await getDownloadsForAuthor(config.key),
+            };
+        })
     );
 
     return <AdminDashboardClient allData={allData} />;
