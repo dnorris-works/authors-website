@@ -25,13 +25,17 @@ function toBook(authorKey: string, row: {
     downloadable: boolean;
     download_slug: string | null;
     download_filename: string | null;
+    updated_at: number;
 }): Book {
     return {
         id: row.id,
         title: row.title,
         description: row.description,
         purchaseLink: row.purchase_link,
-        coverUrl: `/api/images/${authorKey}/${row.id}/cover`,
+        // ?v= busts any cache (browser, CDN, proxy) whenever the book is
+        // saved, since the cover is served from a URL that would
+        // otherwise stay identical even after the image is replaced.
+        coverUrl: `/api/images/${authorKey}/${row.id}/cover?v=${row.updated_at}`,
         comingSoon: row.coming_soon,
         sortOrder: row.sort_order,
         show: row.show,
@@ -41,7 +45,7 @@ function toBook(authorKey: string, row: {
     };
 }
 
-const BOOK_COLUMNS = `id, title, description, purchase_link, coming_soon, sort_order, show, downloadable, download_slug, download_filename`;
+const BOOK_COLUMNS = `id, title, description, purchase_link, coming_soon, sort_order, show, downloadable, download_slug, download_filename, extract(epoch from updated_at) AS updated_at`;
 
 // Public site: only books the author has chosen to show.
 export async function getBooksForAuthor(authorKey: string): Promise<Book[]> {

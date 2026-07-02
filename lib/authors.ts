@@ -31,13 +31,18 @@ type ProfileRow = {
     subtagline: string;
     bio: string;
     featured_book_id: number | null;
+    updated_at: Date;
 };
 
-function imageUrl(authorKey: string, role: AuthorImageRole, roles: Set<string>): string | null {
-    return roles.has(role) ? `/api/author-image/${authorKey}/${role}` : null;
+// ?v= busts any cache (browser, CDN, proxy) whenever the author profile is
+// saved, since these URLs are keyed by author/role and would otherwise
+// stay identical even after the image behind them is replaced.
+function imageUrl(authorKey: string, role: AuthorImageRole, roles: Set<string>, version: number): string | null {
+    return roles.has(role) ? `/api/author-image/${authorKey}/${role}?v=${version}` : null;
 }
 
 function toAuthor(row: ProfileRow, roles: Set<string>): Author {
+    const version = row.updated_at.getTime();
     return {
         key: row.author_key,
         domain: row.domain,
@@ -48,10 +53,10 @@ function toAuthor(row: ProfileRow, roles: Set<string>): Author {
         tagline: row.tagline,
         subtagline: row.subtagline,
         bio: row.bio,
-        logo: imageUrl(row.author_key, 'logo', roles),
-        favicon: imageUrl(row.author_key, 'favicon', roles),
-        heroImage: imageUrl(row.author_key, 'hero', roles),
-        photoUrl: imageUrl(row.author_key, 'photo', roles),
+        logo: imageUrl(row.author_key, 'logo', roles, version),
+        favicon: imageUrl(row.author_key, 'favicon', roles, version),
+        heroImage: imageUrl(row.author_key, 'hero', roles, version),
+        photoUrl: imageUrl(row.author_key, 'photo', roles, version),
         featuredBookId: row.featured_book_id,
     };
 }
