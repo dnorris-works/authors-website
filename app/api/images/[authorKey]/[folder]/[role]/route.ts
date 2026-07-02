@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     try {
         const pool = getPool();
         const result = await pool.query(
-            `SELECT data, mime_type FROM authors.images
+            `SELECT data, mime_type, thumb_data, thumb_mime_type FROM authors.images
              WHERE author_key = $1 AND book_id = $2 AND role = $3
              LIMIT 1`,
             [authorKey, parseInt(folder, 10), role]
@@ -29,13 +29,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
             return new NextResponse('Image not found.', { status: 404 });
         }
 
-        const { data, mime_type } = result.rows[0];
-        const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+        const { data, mime_type, thumb_data, thumb_mime_type } = result.rows[0];
+        // Nothing in the UI displays the full-size original — serve the
+        // resized thumbnail when we have one, falling back to the original
+        // for images uploaded before thumbnails existed.
+        const rawData = thumb_data ?? data;
+        const mimeType = thumb_data ? thumb_mime_type : mime_type;
+        const buffer = Buffer.isBuffer(rawData) ? rawData : Buffer.from(rawData);
 
         return new NextResponse(buffer, {
             status: 200,
             headers: {
-                'Content-Type': mime_type,
+                'Content-Type': mimeType,
                 'Cache-Control': 'public, max-age=31536000, immutable',
             },
         });

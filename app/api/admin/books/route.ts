@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthenticated } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { resizeCover } from '@/lib/images';
 
 export async function GET(req: NextRequest) {
     const authed = await isAuthenticated();
@@ -103,16 +104,19 @@ export async function POST(req: NextRequest) {
             const arrayBuffer = await coverFile.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             const mimeType = coverFile.type || 'image/jpeg';
+            const thumb = await resizeCover(buffer, mimeType);
 
             await pool.query(
-                `INSERT INTO authors.images (author_key, book_id, role, filename, mime_type, data)
-                 VALUES ($1, $2, 'cover', $3, $4, $5::bytea)
+                `INSERT INTO authors.images (author_key, book_id, role, filename, mime_type, data, thumb_mime_type, thumb_data)
+                 VALUES ($1, $2, 'cover', $3, $4, $5::bytea, $6, $7::bytea)
                  ON CONFLICT (author_key, book_id, role)
                  DO UPDATE SET
                      filename = EXCLUDED.filename,
                      mime_type = EXCLUDED.mime_type,
-                     data = EXCLUDED.data`,
-                [authorKey, id, coverFile.name, mimeType, buffer]
+                     data = EXCLUDED.data,
+                     thumb_mime_type = EXCLUDED.thumb_mime_type,
+                     thumb_data = EXCLUDED.thumb_data`,
+                [authorKey, id, coverFile.name, mimeType, buffer, thumb?.mimeType ?? null, thumb?.buffer ?? null]
             );
         }
 

@@ -40,17 +40,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS authors_books_download_slug_idx
 -- Author-level images (logo, favicon, hero, lead_magnet, photo) use
 -- book_id IS NULL with a role identifying which image it is.
 CREATE TABLE IF NOT EXISTS authors.images (
-    id          SERIAL PRIMARY KEY,
-    author_key  TEXT NOT NULL,
-    book_id     INTEGER REFERENCES authors.books(id) ON DELETE CASCADE,
-    role        TEXT NOT NULL,
-    filename    TEXT NOT NULL,
-    mime_type   TEXT NOT NULL,
-    data        BYTEA NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id               SERIAL PRIMARY KEY,
+    author_key       TEXT NOT NULL,
+    book_id          INTEGER REFERENCES authors.books(id) ON DELETE CASCADE,
+    role             TEXT NOT NULL,
+    filename         TEXT NOT NULL,
+    mime_type        TEXT NOT NULL,
+    data             BYTEA NOT NULL,
+    thumb_mime_type  TEXT,
+    thumb_data       BYTEA,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (author_key, book_id, role)
 );
+
+-- Adds the resized-thumbnail columns if this table already existed from a prior run.
+-- `data` keeps holding the original full-size upload; `thumb_data` is what's
+-- actually served, since nothing in the UI displays covers at full size.
+ALTER TABLE authors.images ADD COLUMN IF NOT EXISTS thumb_mime_type TEXT;
+ALTER TABLE authors.images ADD COLUMN IF NOT EXISTS thumb_data BYTEA;
 
 -- book_id is NULL for author-level images, and NULL doesn't collide with
 -- the UNIQUE constraint above, so a separate partial index enforces
