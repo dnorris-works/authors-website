@@ -46,6 +46,14 @@ export default async function Home() {
                 style={{ backgroundColor: '#faf6f1', color: '#2c2c2c' }}
             >
                 <div className="text-center px-6">
+                    <img
+                        src="/dfp-logo.png"
+                        alt="Deep Field Press"
+                        width={120}
+                        height={120}
+                        className="mx-auto mb-6"
+                        style={{ width: '120px', height: '120px', objectFit: 'contain' }}
+                    />
                     <h1 className="font-serif text-4xl mb-6">Deep Field Press</h1>
                     <p className="max-w-xl mx-auto mb-4 text-lg leading-relaxed">
                         Deep Field Press publishes fiction that takes ideas seriously — stories built at the intersection of science, faith, and the questions we don&apos;t usually let ourselves ask out loud.
