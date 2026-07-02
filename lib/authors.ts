@@ -13,11 +13,11 @@ export type Author = {
     logo: string | null;
     favicon: string | null;
     heroImage: string | null;
-    leadMagnetImage: string | null;
     photoUrl: string | null;
+    featuredBookId: number | null;
 };
 
-export const IMAGE_ROLES = ['logo', 'favicon', 'hero', 'lead_magnet', 'photo'] as const;
+export const IMAGE_ROLES = ['logo', 'favicon', 'hero', 'photo'] as const;
 export type AuthorImageRole = typeof IMAGE_ROLES[number];
 
 type ProfileRow = {
@@ -30,6 +30,7 @@ type ProfileRow = {
     tagline: string;
     subtagline: string;
     bio: string;
+    featured_book_id: number | null;
 };
 
 function imageUrl(authorKey: string, role: AuthorImageRole, roles: Set<string>): string | null {
@@ -50,8 +51,8 @@ function toAuthor(row: ProfileRow, roles: Set<string>): Author {
         logo: imageUrl(row.author_key, 'logo', roles),
         favicon: imageUrl(row.author_key, 'favicon', roles),
         heroImage: imageUrl(row.author_key, 'hero', roles),
-        leadMagnetImage: imageUrl(row.author_key, 'lead_magnet', roles),
         photoUrl: imageUrl(row.author_key, 'photo', roles),
+        featuredBookId: row.featured_book_id,
     };
 }
 
@@ -114,12 +115,13 @@ export async function updateAuthorProfile(input: {
     tagline: string;
     subtagline: string;
     bio: string;
+    featuredBookId: number | null;
 }): Promise<void> {
     const pool = getPool();
     await pool.query(
         `UPDATE authors.profiles
          SET domain = $2, accent_color = $3, mailerlite_account = $4, mailerlite_form = $5,
-             name = $6, tagline = $7, subtagline = $8, bio = $9
+             name = $6, tagline = $7, subtagline = $8, bio = $9, featured_book_id = $10
          WHERE author_key = $1`,
         [
             input.authorKey,
@@ -131,6 +133,7 @@ export async function updateAuthorProfile(input: {
             input.tagline,
             input.subtagline,
             input.bio,
+            input.featuredBookId,
         ]
     );
 }

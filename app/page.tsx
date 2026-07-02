@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { getAuthorByDomain, getAuthorByKey, getAllAuthors } from '@/lib/authors';
-import { getBooksForAuthor } from '@/lib/books';
+import { getBooksForAuthor, getBookById } from '@/lib/books';
 import AuthorPage from '@/components/AuthorPage';
 import type { Metadata } from 'next';
 
@@ -65,7 +65,10 @@ export default async function Home() {
         );
     }
 
-    const books = await getBooksForAuthor(author.key);
+    const [books, featuredBook] = await Promise.all([
+        getBooksForAuthor(author.key),
+        author.featuredBookId ? getBookById(author.key, author.featuredBookId) : Promise.resolve(null),
+    ]);
 
-    return <AuthorPage author={author} books={books} />;
+    return <AuthorPage author={author} books={books} featuredBook={featuredBook} />;
 }

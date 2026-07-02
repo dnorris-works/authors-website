@@ -50,8 +50,8 @@ type EditingProfile = {
     existingFaviconUrl: string | null;
     heroFile: File | null;
     existingHeroUrl: string | null;
-    leadMagnetFile: File | null;
-    existingLeadMagnetUrl: string | null;
+    featuredBookId: number | null;
+    books: Book[];
 };
 
 type NewAuthor = {
@@ -174,7 +174,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (res.ok) window.location.reload();
     }
 
-    function startEditProfile(author: Author) {
+    function startEditProfile(author: Author, books: Book[]) {
         setEditingProfile({
             authorKey: author.key,
             domain: author.domain ?? '',
@@ -193,8 +193,8 @@ export default function AdminDashboardClient({ allData }: Props) {
             existingFaviconUrl: author.favicon,
             heroFile: null,
             existingHeroUrl: author.heroImage,
-            leadMagnetFile: null,
-            existingLeadMagnetUrl: author.leadMagnetImage,
+            featuredBookId: author.featuredBookId,
+            books,
         });
         setError('');
         setSuccess('');
@@ -220,7 +220,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (editingProfile.logoFile) formData.append('logo', editingProfile.logoFile);
         if (editingProfile.faviconFile) formData.append('favicon', editingProfile.faviconFile);
         if (editingProfile.heroFile) formData.append('hero', editingProfile.heroFile);
-        if (editingProfile.leadMagnetFile) formData.append('leadMagnet', editingProfile.leadMagnetFile);
+        if (editingProfile.featuredBookId !== null) formData.append('featuredBookId', String(editingProfile.featuredBookId));
 
         const res = await fetch('/api/admin/profile', { method: 'POST', body: formData });
 
@@ -309,7 +309,7 @@ export default function AdminDashboardClient({ allData }: Props) {
                                 </a>
                             </div>
                             <button
-                                onClick={() => startEditProfile(author)}
+                                onClick={() => startEditProfile(author, books)}
                                 className="text-sm px-4 py-2 rounded-lg border transition-opacity hover:opacity-60"
                                 style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
                             >
@@ -634,15 +634,23 @@ export default function AdminDashboardClient({ allData }: Props) {
                                     )}
                                     <input type="file" accept="image/*" onChange={e => setEditingProfile({ ...editingProfile, heroFile: e.target.files?.[0] ?? null })} className="text-sm" style={{ color: '#2c2c2c' }} />
                                 </Field>
-                                <Field label="Lead magnet cover image">
-                                    {editingProfile.existingLeadMagnetUrl && (
-                                        <img
-                                            src={editingProfile.existingLeadMagnetUrl}
-                                            alt=""
-                                            style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '4px', marginBottom: '0.5rem' }}
-                                        />
+                                <Field label="Featured download (shown in the email signup box)">
+                                    <select
+                                        value={editingProfile.featuredBookId ?? ''}
+                                        onChange={e => setEditingProfile({ ...editingProfile, featuredBookId: e.target.value ? parseInt(e.target.value, 10) : null })}
+                                        className="w-full border rounded-lg px-4 py-2 text-base outline-none"
+                                        style={inputStyle}
+                                    >
+                                        <option value="">None</option>
+                                        {editingProfile.books.filter(b => b.downloadable).map(b => (
+                                            <option key={b.id} value={b.id}>{b.title || '(untitled)'}</option>
+                                        ))}
+                                    </select>
+                                    {editingProfile.books.filter(b => b.downloadable).length === 0 && (
+                                        <p className="text-xs mt-1" style={{ color: '#8c7b6b' }}>
+                                            Mark a book as Downloadable first, then pick it here. Its cover is used automatically.
+                                        </p>
                                     )}
-                                    <input type="file" accept="image/*" onChange={e => setEditingProfile({ ...editingProfile, leadMagnetFile: e.target.files?.[0] ?? null })} className="text-sm" style={{ color: '#2c2c2c' }} />
                                 </Field>
                                 {error && <p className="text-sm text-red-600">{error}</p>}
                                 {success && <p className="text-sm text-green-600">{success}</p>}

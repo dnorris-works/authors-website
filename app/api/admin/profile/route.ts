@@ -7,7 +7,6 @@ const IMAGE_FIELDS: { field: string; role: AuthorImageRole }[] = [
     { field: 'logo', role: 'logo' },
     { field: 'favicon', role: 'favicon' },
     { field: 'hero', role: 'hero' },
-    { field: 'leadMagnet', role: 'lead_magnet' },
 ];
 
 export async function POST(req: NextRequest) {
@@ -23,6 +22,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'authorKey is required.' }, { status: 400 });
     }
 
+    const featuredBookIdRaw = formData.get('featuredBookId') as string;
+
     try {
         await updateAuthorProfile({
             authorKey,
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
             tagline: formData.get('tagline') as string,
             subtagline: formData.get('subtagline') as string,
             bio: formData.get('bio') as string,
+            featuredBookId: featuredBookIdRaw ? parseInt(featuredBookIdRaw, 10) : null,
         });
 
         for (const { field, role } of IMAGE_FIELDS) {

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS authors.profiles (
     photo_filename      TEXT,
     photo_mime_type     TEXT,
     photo_data          BYTEA,
+    featured_book_id    INTEGER REFERENCES authors.books(id) ON DELETE SET NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -91,6 +92,10 @@ ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS domain TEXT;
 ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#2c2c2c';
 ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS mailerlite_account TEXT;
 ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS mailerlite_form TEXT;
+-- The book featured in the email signup / lead-magnet section, replacing
+-- the old standalone "lead magnet image" upload — the book's own (already
+-- resized) cover is used instead, so there's nothing extra to keep in sync.
+ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS featured_book_id INTEGER REFERENCES authors.books(id) ON DELETE SET NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS authors_profiles_domain_idx
     ON authors.profiles (domain) WHERE domain IS NOT NULL;

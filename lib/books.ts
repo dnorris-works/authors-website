@@ -74,3 +74,20 @@ export async function getAllBooksForAuthor(authorKey: string): Promise<Book[]> {
 
     return result.rows.map(row => toBook(authorKey, row));
 }
+
+// A book chosen to feature elsewhere (e.g. the email signup section),
+// independent of its `show` status on the main book list.
+export async function getBookById(authorKey: string, bookId: number): Promise<Book | null> {
+    if (!process.env.DATABASE_URL) return null;
+
+    const pool = getPool();
+    const result = await pool.query(
+        `SELECT ${BOOK_COLUMNS}
+         FROM authors.books
+         WHERE author_key = $1 AND id = $2`,
+        [authorKey, bookId]
+    );
+
+    if (result.rows.length === 0) return null;
+    return toBook(authorKey, result.rows[0]);
+}

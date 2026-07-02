@@ -7,9 +7,10 @@ import type { Book } from '@/lib/books';
 type Props = {
     author: Author;
     books: Book[];
+    featuredBook: Book | null;
 };
 
-export default function AuthorPage({ author, books }: Props) {
+export default function AuthorPage({ author, books, featuredBook }: Props) {
     const [showAbout, setShowAbout] = useState(false);
 
     // Load MailerLite script if account is configured
@@ -145,7 +146,7 @@ export default function AuthorPage({ author, books }: Props) {
                 )}
 
                 {/* Lead Magnet */}
-                {author.mailerLiteAccount && author.mailerLiteForm && author.leadMagnetImage && (
+                {author.mailerLiteAccount && author.mailerLiteForm && featuredBook && (
                     <section
                         className="max-w-6xl mx-auto px-6 mt-16"
                     >
@@ -162,13 +163,14 @@ export default function AuthorPage({ author, books }: Props) {
                             }}
                         >
                             <img
-                                src={author.leadMagnetImage}
-                                alt="Free eBook"
+                                src={featuredBook.coverUrl}
+                                alt={featuredBook.title}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                 style={{ width: '120px', flexShrink: 0, borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
                             />
                             <div style={{ flex: 1 }}>
                                 <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', color: '#2c2c2c', marginBottom: '0.5rem' }}>
-                                    Get your free eBook
+                                    {featuredBook.title ? `Get ${featuredBook.title} free` : 'Get your free eBook'}
                                 </h2>
                                 <div className="ml-embedded" data-form={author.mailerLiteForm} />
                                 <p style={{ fontSize: '0.75rem', color: '#8c7b6b', marginTop: '0.5rem' }}>
