@@ -28,9 +28,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     try {
         const pool = getPool();
         const result = await pool.query(
-            `SELECT filename, mime_type, data
-             FROM authors.downloads
-             WHERE author_key = $1 AND slug = $2
+            `SELECT download_filename, download_mime_type, download_data
+             FROM authors.books
+             WHERE author_key = $1 AND download_slug = $2 AND downloadable = TRUE
              LIMIT 1`,
             [author.key, slug]
         );
@@ -39,14 +39,14 @@ export async function GET(req: NextRequest, { params }: Params) {
             return new NextResponse('File not found.', { status: 404 });
         }
 
-        const { filename, mime_type, data } = result.rows[0];
-        const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+        const { download_filename, download_mime_type, download_data } = result.rows[0];
+        const buffer = Buffer.isBuffer(download_data) ? download_data : Buffer.from(download_data);
 
         return new NextResponse(buffer, {
             status: 200,
             headers: {
-                'Content-Type': mime_type,
-                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Type': download_mime_type,
+                'Content-Disposition': `attachment; filename="${download_filename}"`,
                 'Cache-Control': 'private, no-store',
             },
         });

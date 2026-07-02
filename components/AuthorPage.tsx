@@ -226,6 +226,21 @@ export default function AuthorPage({ author, books }: Props) {
                                             style={{ marginTop: '8px', fontSize: '0.875rem', color: '#8c7b6b' }}
                                             dangerouslySetInnerHTML={{ __html: book.description }}
                                         />
+                                        {book.downloadable && book.downloadSlug && (
+                                            <a
+                                                href={`/download/${book.downloadSlug}`}
+                                                style={{
+                                                    display: 'inline-block',
+                                                    marginTop: '12px',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: '500',
+                                                    color: author.accentColor,
+                                                    textDecoration: 'underline',
+                                                }}
+                                            >
+                                                Free Download
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             ))}

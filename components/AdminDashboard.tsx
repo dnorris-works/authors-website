@@ -4,12 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Author } from '@/lib/authors';
 import type { Book } from '@/lib/books';
-import type { Download } from '@/app/admin/dashboard/page';
 
 type AuthorData = {
     author: Author;
     books: Book[];
-    downloads: Download[];
 };
 
 type Props = {
@@ -26,16 +24,12 @@ type EditingBook = {
     sortOrder: number;
     coverFile: File | null;
     existingCoverUrl: string;
-};
-
-type EditingDownload = {
-    authorKey: string;
-    slug: string;
-    filename: string;
-    file: File | null;
-    coverFile: File | null;
-    existingCoverUrl: string | null;
-    isNew: boolean;
+    show: boolean;
+    downloadable: boolean;
+    downloadSlug: string;
+    downloadFilename: string;
+    downloadFile: File | null;
+    hasExistingDownloadFile: boolean;
 };
 
 type EditingProfile = {
@@ -78,23 +72,18 @@ const emptyBook = (authorKey: string): EditingBook => ({
     sortOrder: 0,
     coverFile: null,
     existingCoverUrl: '',
-});
-
-const emptyDownload = (authorKey: string): EditingDownload => ({
-    authorKey,
-    slug: '',
-    filename: '',
-    file: null,
-    coverFile: null,
-    existingCoverUrl: null,
-    isNew: true,
+    show: true,
+    downloadable: false,
+    downloadSlug: '',
+    downloadFilename: '',
+    downloadFile: null,
+    hasExistingDownloadFile: false,
 });
 
 export default function AdminDashboardClient({ allData }: Props) {
     const router = useRouter();
     const [editing, setEditing] = useState<EditingBook | null>(null);
     const [viewing, setViewing] = useState<{ authorKey: string; book: Book } | null>(null);
-    const [editingDownload, setEditingDownload] = useState<EditingDownload | null>(null);
     const [editingProfile, setEditingProfile] = useState<EditingProfile | null>(null);
     const [addingAuthor, setAddingAuthor] = useState<NewAuthor | null>(null);
     const [saving, setSaving] = useState(false);
@@ -128,20 +117,12 @@ export default function AdminDashboardClient({ allData }: Props) {
             sortOrder: book.sortOrder,
             coverFile: null,
             existingCoverUrl: book.coverUrl,
-        });
-        setError('');
-        setSuccess('');
-    }
-
-    function startEditDownload(download: Download) {
-        setEditingDownload({
-            authorKey: download.authorKey,
-            slug: download.slug,
-            filename: download.filename,
-            file: null,
-            coverFile: null,
-            existingCoverUrl: download.coverUrl,
-            isNew: false,
+            show: book.show,
+            downloadable: book.downloadable,
+            downloadSlug: book.downloadSlug ?? '',
+            downloadFilename: book.downloadFilename ?? '',
+            downloadFile: null,
+            hasExistingDownloadFile: book.downloadable,
         });
         setError('');
         setSuccess('');
@@ -162,6 +143,13 @@ export default function AdminDashboardClient({ allData }: Props) {
         formData.append('comingSoon', String(editing.comingSoon));
         formData.append('sortOrder', String(editing.sortOrder));
         if (editing.coverFile) formData.append('cover', editing.coverFile);
+        formData.append('show', String(editing.show));
+        formData.append('downloadable', String(editing.downloadable));
+        if (editing.downloadable) {
+            formData.append('downloadSlug', editing.downloadSlug);
+            formData.append('downloadFilename', editing.downloadFilename);
+        }
+        if (editing.downloadFile) formData.append('downloadFile', editing.downloadFile);
 
         const res = await fetch('/api/admin/books', { method: 'POST', body: formData });
 
@@ -182,42 +170,6 @@ export default function AdminDashboardClient({ allData }: Props) {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ authorKey, bookId }),
-        });
-        if (res.ok) router.refresh();
-    }
-
-    async function handleSaveDownload() {
-        if (!editingDownload) return;
-        setSaving(true);
-        setError('');
-        setSuccess('');
-
-        const formData = new FormData();
-        formData.append('authorKey', editingDownload.authorKey);
-        formData.append('slug', editingDownload.slug);
-        formData.append('filename', editingDownload.filename);
-        if (editingDownload.file) formData.append('file', editingDownload.file);
-        if (editingDownload.coverFile) formData.append('cover', editingDownload.coverFile);
-
-        const res = await fetch('/api/admin/downloads', { method: 'POST', body: formData });
-
-        if (res.ok) {
-            setSuccess('Download saved.');
-            setEditingDownload(null);
-            router.refresh();
-        } else {
-            const data = await res.json();
-            setError(data.error ?? 'Something went wrong.');
-        }
-        setSaving(false);
-    }
-
-    async function handleDeleteDownload(authorKey: string, slug: string) {
-        if (!confirm('Delete this download? This cannot be undone.')) return;
-        const res = await fetch('/api/admin/downloads', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ authorKey, slug }),
         });
         if (res.ok) router.refresh();
     }
@@ -334,7 +286,7 @@ export default function AdminDashboardClient({ allData }: Props) {
                 </div>
 
                 {/* Author sections */}
-                {allData.map(({ author, books, downloads }) => (
+                {allData.map(({ author, books }) => (
                     <section key={author.key} className="mb-16">
 
                         <div className="flex justify-between items-center mb-8">
@@ -403,9 +355,22 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                     >
                                                         {book.title || '(untitled)'}
                                                     </button>
-                                                    {book.comingSoon && (
-                                                        <p className="text-sm mt-0.5" style={{ color: '#8c7b6b' }}>Coming Soon</p>
-                                                    )}
+                                                    <div className="flex gap-2 flex-wrap mt-0.5">
+                                                        {book.comingSoon && (
+                                                            <span className="text-sm" style={{ color: '#8c7b6b' }}>Coming Soon</span>
+                                                        )}
+                                                        {!book.show && (
+                                                            <span className="text-sm" style={{ color: '#c0392b' }}>Hidden</span>
+                                                        )}
+                                                        {book.downloadable && (
+                                                            <span
+                                                                className="text-sm select-all"
+                                                                style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
+                                                            >
+                                                                https://{author.domain}/download/{book.downloadSlug}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -423,81 +388,6 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                 >
                                                     Delete
                                                 </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Downloads */}
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-bold" style={{ color: '#2c2c2c' }}>Downloads</h3>
-                                <button
-                                    onClick={() => setEditingDownload(emptyDownload(author.key))}
-                                    className="text-sm px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-80"
-                                    style={{ backgroundColor: '#6b4c3b' }}
-                                >
-                                    + Add Download
-                                </button>
-                            </div>
-
-                            {downloads.length === 0 ? (
-                                <p className="text-sm" style={{ color: '#8c7b6b' }}>No downloads yet.</p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {downloads.map(download => (
-                                        <div
-                                            key={download.id}
-                                            className="rounded-lg px-5 py-4"
-                                            style={{ backgroundColor: '#ffffff', border: '1px solid #e8dfd5' }}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex items-start gap-4" style={{ flex: 1, minWidth: 0, marginRight: '1rem' }}>
-                                                    {download.coverUrl && (
-                                                        <img
-                                                            src={download.coverUrl}
-                                                            alt=""
-                                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                                            style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
-                                                        />
-                                                    )}
-                                                    <div style={{ minWidth: 0 }}>
-                                                        <p className="font-medium" style={{ color: '#2c2c2c' }}>{download.filename}</p>
-                                                        <p
-                                                            className="text-sm mt-1 select-all"
-                                                            style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
-                                                        >
-                                                            https://{author.domain}/download/{download.slug}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2" style={{ flexShrink: 0 }}>
-                                                    <button
-                                                        onClick={() => startEditDownload(download)}
-                                                        className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
-                                                        style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <a
-                                                        href={`https://${author.domain}/download/${download.slug}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
-                                                        style={{ borderColor: '#d4c9be', color: '#6b4c3b' }}
-                                                    >
-                                                        Test
-                                                    </a>
-                                                    <button
-                                                        onClick={() => handleDeleteDownload(download.authorKey, download.slug)}
-                                                        className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
-                                                        style={{ borderColor: '#f4a4a4', color: '#c0392b' }}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -549,6 +439,18 @@ export default function AdminDashboardClient({ allData }: Props) {
                                 </DetailRow>
                                 <DetailRow label="Coming soon">
                                     <span className="text-sm">{viewing.book.comingSoon ? 'Yes' : 'No'}</span>
+                                </DetailRow>
+                                <DetailRow label="Shown on site">
+                                    <span className="text-sm">{viewing.book.show ? 'Yes' : 'No'}</span>
+                                </DetailRow>
+                                <DetailRow label="Downloadable">
+                                    {viewing.book.downloadable ? (
+                                        <span className="text-sm select-all" style={{ wordBreak: 'break-all' }}>
+                                            /download/{viewing.book.downloadSlug}
+                                        </span>
+                                    ) : (
+                                        <span className="text-sm" style={{ color: '#8c7b6b' }}>No</span>
+                                    )}
                                 </DetailRow>
                             </div>
                             <div className="flex gap-3 mt-8">
@@ -602,6 +504,49 @@ export default function AdminDashboardClient({ allData }: Props) {
                                     <input type="checkbox" id="comingSoon" checked={editing.comingSoon} onChange={e => setEditing({ ...editing, comingSoon: e.target.checked })} className="w-4 h-4" />
                                     <label htmlFor="comingSoon" className="text-sm" style={{ color: '#2c2c2c' }}>Coming soon</label>
                                 </div>
+                                <div className="flex items-center gap-3">
+                                    <input type="checkbox" id="show" checked={editing.show} onChange={e => setEditing({ ...editing, show: e.target.checked })} className="w-4 h-4" />
+                                    <label htmlFor="show" className="text-sm" style={{ color: '#2c2c2c' }}>Show on site</label>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <input type="checkbox" id="downloadable" checked={editing.downloadable} onChange={e => setEditing({ ...editing, downloadable: e.target.checked })} className="w-4 h-4" />
+                                    <label htmlFor="downloadable" className="text-sm" style={{ color: '#2c2c2c' }}>Downloadable</label>
+                                </div>
+                                {editing.downloadable && (
+                                    <>
+                                        <Field label="Download slug (used in the URL, e.g. witness-persists)">
+                                            <input
+                                                type="text"
+                                                value={editing.downloadSlug}
+                                                onChange={e => setEditing({ ...editing, downloadSlug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') })}
+                                                className="w-full border rounded-lg px-4 py-2 text-base outline-none"
+                                                style={inputStyle}
+                                                placeholder="witness-persists"
+                                            />
+                                        </Field>
+                                        <Field label="Download filename (what the reader sees)">
+                                            <input
+                                                type="text"
+                                                value={editing.downloadFilename}
+                                                onChange={e => setEditing({ ...editing, downloadFilename: e.target.value })}
+                                                className="w-full border rounded-lg px-4 py-2 text-base outline-none"
+                                                style={inputStyle}
+                                                placeholder="The-Witness-Persists.epub"
+                                            />
+                                        </Field>
+                                        <Field label={editing.hasExistingDownloadFile ? 'Replace file (optional)' : 'File'}>
+                                            <input
+                                                type="file"
+                                                onChange={e => setEditing({ ...editing, downloadFile: e.target.files?.[0] ?? null })}
+                                                className="text-sm"
+                                                style={{ color: '#2c2c2c' }}
+                                            />
+                                            <p className="text-xs mt-1" style={{ color: '#8c7b6b' }}>
+                                                The file readers will download — e.g. an .epub, .pdf, or .mobi file.
+                                            </p>
+                                        </Field>
+                                    </>
+                                )}
                                 {error && <p className="text-sm text-red-600">{error}</p>}
                                 {success && <p className="text-sm text-green-600">{success}</p>}
                                 <div className="flex gap-3 pt-2">
@@ -609,80 +554,6 @@ export default function AdminDashboardClient({ allData }: Props) {
                                         {saving ? 'Saving…' : 'Save'}
                                     </button>
                                     <button onClick={() => setEditing(null)} className="flex-1 py-2 rounded-lg border font-medium transition-opacity hover:opacity-60" style={{ borderColor: '#d4c9be', color: '#8c7b6b' }}>
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Add / Edit download form */}
-                {editingDownload && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                        <div
-                            className="w-full max-w-lg rounded-xl p-8 shadow-2xl overflow-y-auto"
-                            style={{ backgroundColor: '#faf6f1', maxHeight: '90vh', color: '#2c2c2c' }}
-                        >
-                            <h2 className="text-xl font-bold mb-6" style={{ color: '#2c2c2c' }}>
-                                {editingDownload.isNew ? 'Add Download' : 'Edit Download'}
-                            </h2>
-                            <div className="space-y-5">
-                                <Field label="Slug (used in the URL, e.g. witness-persists)">
-                                    <input
-                                        type="text"
-                                        value={editingDownload.slug}
-                                        onChange={e => setEditingDownload({ ...editingDownload, slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') })}
-                                        className="w-full border rounded-lg px-4 py-2 text-base outline-none"
-                                        style={inputStyle}
-                                        placeholder="witness-persists"
-                                        readOnly={!editingDownload.isNew}
-                                    />
-                                </Field>
-                                <Field label="Filename (what the subscriber sees)">
-                                    <input
-                                        type="text"
-                                        value={editingDownload.filename}
-                                        onChange={e => setEditingDownload({ ...editingDownload, filename: e.target.value })}
-                                        className="w-full border rounded-lg px-4 py-2 text-base outline-none"
-                                        style={inputStyle}
-                                        placeholder="The-Witness-Persists.epub"
-                                    />
-                                </Field>
-                                <Field label={editingDownload.isNew ? 'File' : 'Replace file (optional)'}>
-                                    <input
-                                        type="file"
-                                        onChange={e => setEditingDownload({ ...editingDownload, file: e.target.files?.[0] ?? null })}
-                                        className="text-sm"
-                                        style={{ color: '#2c2c2c' }}
-                                    />
-                                    <p className="text-xs mt-1" style={{ color: '#8c7b6b' }}>
-                                        The file readers will download — e.g. an .epub, .pdf, or .mobi file.
-                                    </p>
-                                </Field>
-                                <Field label="Cover image">
-                                    {editingDownload.existingCoverUrl && (
-                                        <img
-                                            src={editingDownload.existingCoverUrl}
-                                            alt=""
-                                            style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '4px', marginBottom: '0.5rem' }}
-                                        />
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={e => setEditingDownload({ ...editingDownload, coverFile: e.target.files?.[0] ?? null })}
-                                        className="text-sm"
-                                        style={{ color: '#2c2c2c' }}
-                                    />
-                                </Field>
-                                {error && <p className="text-sm text-red-600">{error}</p>}
-                                {success && <p className="text-sm text-green-600">{success}</p>}
-                                <div className="flex gap-3 pt-2">
-                                    <button onClick={handleSaveDownload} disabled={saving} className="flex-1 py-2 rounded-lg text-white font-medium transition-opacity disabled:opacity-50" style={{ backgroundColor: '#6b4c3b' }}>
-                                        {saving ? 'Saving…' : 'Save'}
-                                    </button>
-                                    <button onClick={() => setEditingDownload(null)} className="flex-1 py-2 rounded-lg border font-medium transition-opacity hover:opacity-60" style={{ borderColor: '#d4c9be', color: '#8c7b6b' }}>
                                         Cancel
                                     </button>
                                 </div>

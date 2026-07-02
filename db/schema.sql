@@ -3,17 +3,38 @@
 
 CREATE SCHEMA IF NOT EXISTS authors;
 
+-- A book is the single listing type for anything an author offers: a
+-- purchasable title, a free download, or both. `show` controls public
+-- visibility; `downloadable` (+ the download_* columns) controls whether
+-- readers can download a file for it directly from this site.
 CREATE TABLE IF NOT EXISTS authors.books (
-    id            SERIAL PRIMARY KEY,
-    author_key    TEXT NOT NULL,
-    title         TEXT NOT NULL DEFAULT '',
-    description   TEXT NOT NULL DEFAULT '',
-    purchase_link TEXT NOT NULL DEFAULT '',
-    coming_soon   BOOLEAN NOT NULL DEFAULT FALSE,
-    sort_order    INTEGER NOT NULL DEFAULT 0,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                    SERIAL PRIMARY KEY,
+    author_key            TEXT NOT NULL,
+    title                 TEXT NOT NULL DEFAULT '',
+    description           TEXT NOT NULL DEFAULT '',
+    purchase_link         TEXT NOT NULL DEFAULT '',
+    coming_soon           BOOLEAN NOT NULL DEFAULT FALSE,
+    sort_order            INTEGER NOT NULL DEFAULT 0,
+    show                  BOOLEAN NOT NULL DEFAULT TRUE,
+    downloadable          BOOLEAN NOT NULL DEFAULT FALSE,
+    download_slug         TEXT,
+    download_filename     TEXT,
+    download_mime_type    TEXT,
+    download_data         BYTEA,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Adds the show/download columns if this table already existed from a prior run.
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS show BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS downloadable BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS download_slug TEXT;
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS download_filename TEXT;
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS download_mime_type TEXT;
+ALTER TABLE authors.books ADD COLUMN IF NOT EXISTS download_data BYTEA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS authors_books_download_slug_idx
+    ON authors.books (author_key, download_slug) WHERE download_slug IS NOT NULL;
 
 -- Holds every uploaded image. Book covers use book_id + role='cover'.
 -- Author-level images (logo, favicon, hero, lead_magnet, photo) use
@@ -129,6 +150,37 @@ CREATE TABLE IF NOT EXISTS authors.downloads (
 ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_filename TEXT;
 ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_mime_type TEXT;
 ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_data BYTEA;
+
+-- Downloads and books are now the same thing (a book with `downloadable = TRUE`).
+-- Carries forward any standalone downloads created before this change into
+-- authors.books so nothing already uploaded gets lost. Safe to re-run.
+DO $$
+DECLARE
+    d RECORD;
+    new_book_id INTEGER;
+BEGIN
+    FOR d IN SELECT * FROM authors.downloads LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM authors.books b
+            WHERE b.author_key = d.author_key AND b.download_slug = d.slug
+        ) THEN
+            INSERT INTO authors.books
+                (author_key, title, show, downloadable, download_slug, download_filename, download_mime_type, download_data, sort_order)
+            VALUES
+                (d.author_key, d.filename, FALSE, TRUE, d.slug, d.filename, d.mime_type, d.data, 0)
+            RETURNING id INTO new_book_id;
+
+            IF d.cover_data IS NOT NULL THEN
+                INSERT INTO authors.images (author_key, book_id, role, filename, mime_type, data)
+                VALUES (d.author_key, new_book_id, 'cover', COALESCE(d.cover_filename, 'cover'), COALESCE(d.cover_mime_type, 'image/jpeg'), d.cover_data);
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
+
+-- Once you've confirmed the migrated books above look right, authors.downloads
+-- is no longer used by the app and can be dropped:
+--   DROP TABLE authors.downloads;
 
 CREATE OR REPLACE FUNCTION authors.set_updated_at()
 RETURNS TRIGGER AS $$
