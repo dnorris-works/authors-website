@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthorConfigByDomain, getAuthorConfigByKey } from '@/lib/authors';
+import { getAuthorByDomain, getAuthorByKey } from '@/lib/authors';
 import { getPool } from '@/lib/db';
 
 type Params = {
@@ -12,12 +12,12 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { slug } = await params;
 
     const hostname = req.headers.get('host')?.split(':')[0] ?? '';
-    let config = getAuthorConfigByDomain(hostname);
-    if (!config && process.env.AUTHOR) {
-        config = getAuthorConfigByKey(process.env.AUTHOR);
+    let author = await getAuthorByDomain(hostname);
+    if (!author && process.env.AUTHOR) {
+        author = await getAuthorByKey(process.env.AUTHOR);
     }
 
-    if (!config) {
+    if (!author) {
         return new NextResponse('File not found.', { status: 404 });
     }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: Params) {
              FROM authors.downloads
              WHERE author_key = $1 AND slug = $2
              LIMIT 1`,
-            [config.key, slug]
+            [author.key, slug]
         );
 
         if (result.rows.length === 0) {

@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS authors.books (
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Holds every uploaded image. Book covers use book_id + role='cover'.
+-- Author-level images (logo, favicon, hero, lead_magnet, photo) use
+-- book_id IS NULL with a role identifying which image it is.
 CREATE TABLE IF NOT EXISTS authors.images (
     id          SERIAL PRIMARY KEY,
     author_key  TEXT NOT NULL,
@@ -28,24 +31,50 @@ CREATE TABLE IF NOT EXISTS authors.images (
     UNIQUE (author_key, book_id, role)
 );
 
+-- book_id is NULL for author-level images, and NULL doesn't collide with
+-- the UNIQUE constraint above, so a separate partial index enforces
+-- one row per (author_key, role) among author-level images.
+CREATE UNIQUE INDEX IF NOT EXISTS authors_images_profile_role_idx
+    ON authors.images (author_key, role) WHERE book_id IS NULL;
+
+-- The full author record: identity, branding, and public-facing content.
+-- Everything an author might change lives here so new authors can be
+-- added and edited entirely from the admin dashboard, no deploy required.
 CREATE TABLE IF NOT EXISTS authors.profiles (
-    author_key      TEXT PRIMARY KEY,
-    name            TEXT NOT NULL DEFAULT '',
-    tagline         TEXT NOT NULL DEFAULT '',
-    subtagline      TEXT NOT NULL DEFAULT '',
-    bio             TEXT NOT NULL DEFAULT '',
-    photo_filename  TEXT,
-    photo_mime_type TEXT,
-    photo_data      BYTEA,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    author_key         TEXT PRIMARY KEY,
+    domain              TEXT,
+    accent_color        TEXT NOT NULL DEFAULT '#2c2c2c',
+    mailerlite_account  TEXT,
+    mailerlite_form     TEXT,
+    name                TEXT NOT NULL DEFAULT '',
+    tagline             TEXT NOT NULL DEFAULT '',
+    subtagline          TEXT NOT NULL DEFAULT '',
+    bio                 TEXT NOT NULL DEFAULT '',
+    photo_filename      TEXT,
+    photo_mime_type     TEXT,
+    photo_data          BYTEA,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Adds the domain/branding columns if this table already existed from a prior run.
+ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS domain TEXT;
+ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#2c2c2c';
+ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS mailerlite_account TEXT;
+ALTER TABLE authors.profiles ADD COLUMN IF NOT EXISTS mailerlite_form TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS authors_profiles_domain_idx
+    ON authors.profiles (domain) WHERE domain IS NOT NULL;
 
 -- Seed with the content that used to live in lib/authors.ts so the
 -- live site keeps showing the same copy after this migration runs.
-INSERT INTO authors.profiles (author_key, name, tagline, subtagline, bio) VALUES
+INSERT INTO authors.profiles (author_key, domain, accent_color, mailerlite_account, mailerlite_form, name, tagline, subtagline, bio) VALUES
 (
     'dallennorris',
+    'dallennorris.com',
+    '#6b4c3b',
+    '2370300',
+    'SeVfZH',
     'D. Allen Norris',
     'Thinker, Storyteller, Author',
     'Fiction about consciousness, embodiment, and the realities we are afraid to question.',
@@ -55,12 +84,31 @@ The path to Catholicism was not a retreat from rigor but an extension of it. The
 ),
 (
     'adrianreeve',
+    'adrianreeve.com',
+    '#7a1f2e',
+    NULL,
+    NULL,
     'Adrian Reeve',
     'Upmarket Literary Fiction',
     'Author of Seen and Still Loved',
     'Adrian Reeve writes romantic fiction exploring themes of rejection, acceptance, and love.'
 )
 ON CONFLICT (author_key) DO NOTHING;
+
+-- Back-fills domain/branding for rows created by an earlier version of this script.
+UPDATE authors.profiles SET domain = 'dallennorris.com', accent_color = '#6b4c3b', mailerlite_account = '2370300', mailerlite_form = 'SeVfZH'
+    WHERE author_key = 'dallennorris' AND domain IS NULL;
+UPDATE authors.profiles SET domain = 'adrianreeve.com', accent_color = '#7a1f2e'
+    WHERE author_key = 'adrianreeve' AND domain IS NULL;
+
+-- Author photos now live in authors.images (role='photo') alongside the
+-- other author-level images. Carries forward any photo uploaded through
+-- an earlier version of the Edit Profile form before this change.
+INSERT INTO authors.images (author_key, book_id, role, filename, mime_type, data)
+SELECT author_key, NULL, 'photo', COALESCE(photo_filename, 'photo'), COALESCE(photo_mime_type, 'image/jpeg'), photo_data
+FROM authors.profiles
+WHERE photo_data IS NOT NULL
+ON CONFLICT (author_key, role) WHERE book_id IS NULL DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS authors.downloads (
     id              SERIAL PRIMARY KEY,
