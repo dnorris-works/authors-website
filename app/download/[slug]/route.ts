@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthorConfigByDomain, getAuthorConfigByKey } from '@/lib/authors';
 import { getPool } from '@/lib/db';
 
 type Params = {
     params: Promise<{
-        authorKey: string;
         slug: string;
     }>;
 };
 
-export async function GET(_req: NextRequest, { params }: Params) {
-    const { authorKey, slug } = await params;
+export async function GET(req: NextRequest, { params }: Params) {
+    const { slug } = await params;
+
+    const hostname = req.headers.get('host')?.split(':')[0] ?? '';
+    let config = getAuthorConfigByDomain(hostname);
+    if (!config && process.env.AUTHOR) {
+        config = getAuthorConfigByKey(process.env.AUTHOR);
+    }
+
+    if (!config) {
+        return new NextResponse('File not found.', { status: 404 });
+    }
 
     if (!process.env.DATABASE_URL) {
         return new NextResponse('No database configured.', { status: 503 });
@@ -22,7 +32,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
              FROM authors.downloads
              WHERE author_key = $1 AND slug = $2
              LIMIT 1`,
-            [authorKey, slug]
+            [config.key, slug]
         );
 
         if (result.rows.length === 0) {

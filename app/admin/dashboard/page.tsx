@@ -12,13 +12,14 @@ export type Download = {
     slug: string;
     filename: string;
     mimeType: string;
+    coverUrl: string | null;
 };
 
 async function getDownloadsForAuthor(authorKey: string): Promise<Download[]> {
     if (!process.env.DATABASE_URL) return [];
     const pool = getPool();
     const result = await pool.query(
-        `SELECT id, author_key, slug, filename, mime_type
+        `SELECT id, author_key, slug, filename, mime_type, cover_data IS NOT NULL AS has_cover
          FROM authors.downloads
          WHERE author_key = $1
          ORDER BY created_at ASC`,
@@ -30,6 +31,7 @@ async function getDownloadsForAuthor(authorKey: string): Promise<Download[]> {
         slug: row.slug,
         filename: row.filename,
         mimeType: row.mime_type,
+        coverUrl: row.has_cover ? `/api/download-cover/${row.author_key}/${row.slug}` : null,
     }));
 }
 

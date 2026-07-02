@@ -33,6 +33,8 @@ type EditingDownload = {
     slug: string;
     filename: string;
     file: File | null;
+    coverFile: File | null;
+    existingCoverUrl: string | null;
     isNew: boolean;
 };
 
@@ -63,6 +65,8 @@ const emptyDownload = (authorKey: string): EditingDownload => ({
     slug: '',
     filename: '',
     file: null,
+    coverFile: null,
+    existingCoverUrl: null,
     isNew: true,
 });
 
@@ -114,6 +118,8 @@ export default function AdminDashboardClient({ allData }: Props) {
             slug: download.slug,
             filename: download.filename,
             file: null,
+            coverFile: null,
+            existingCoverUrl: download.coverUrl,
             isNew: false,
         });
         setError('');
@@ -170,6 +176,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         formData.append('slug', editingDownload.slug);
         formData.append('filename', editingDownload.filename);
         if (editingDownload.file) formData.append('file', editingDownload.file);
+        if (editingDownload.coverFile) formData.append('cover', editingDownload.coverFile);
 
         const res = await fetch('/api/admin/downloads', { method: 'POST', body: formData });
 
@@ -374,14 +381,24 @@ export default function AdminDashboardClient({ allData }: Props) {
                                             style={{ backgroundColor: '#ffffff', border: '1px solid #e8dfd5' }}
                                         >
                                             <div className="flex justify-between items-start">
-                                                <div style={{ flex: 1, minWidth: 0, marginRight: '1rem' }}>
-                                                    <p className="font-medium" style={{ color: '#2c2c2c' }}>{download.filename}</p>
-                                                    <p
-                                                        className="text-sm mt-1 select-all"
-                                                        style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
-                                                    >
-                                                        {typeof window !== 'undefined' ? window.location.origin : ''}/download/{download.authorKey}/{download.slug}
-                                                    </p>
+                                                <div className="flex items-start gap-4" style={{ flex: 1, minWidth: 0, marginRight: '1rem' }}>
+                                                    {download.coverUrl && (
+                                                        <img
+                                                            src={download.coverUrl}
+                                                            alt=""
+                                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                            style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
+                                                        />
+                                                    )}
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <p className="font-medium" style={{ color: '#2c2c2c' }}>{download.filename}</p>
+                                                        <p
+                                                            className="text-sm mt-1 select-all"
+                                                            style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
+                                                        >
+                                                            https://{author.domain}/download/{download.slug}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2" style={{ flexShrink: 0 }}>
                                                     <button
@@ -392,7 +409,7 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                         Edit
                                                     </button>
                                                     <a
-                                                        href={`/download/${download.authorKey}/${download.slug}`}
+                                                        href={`https://${author.domain}/download/${download.slug}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-sm px-3 py-1.5 rounded border transition-opacity hover:opacity-60"
@@ -563,6 +580,25 @@ export default function AdminDashboardClient({ allData }: Props) {
                                     <input
                                         type="file"
                                         onChange={e => setEditingDownload({ ...editingDownload, file: e.target.files?.[0] ?? null })}
+                                        className="text-sm"
+                                        style={{ color: '#2c2c2c' }}
+                                    />
+                                    <p className="text-xs mt-1" style={{ color: '#8c7b6b' }}>
+                                        The file readers will download — e.g. an .epub, .pdf, or .mobi file.
+                                    </p>
+                                </Field>
+                                <Field label="Cover image">
+                                    {editingDownload.existingCoverUrl && (
+                                        <img
+                                            src={editingDownload.existingCoverUrl}
+                                            alt=""
+                                            style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '4px', marginBottom: '0.5rem' }}
+                                        />
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={e => setEditingDownload({ ...editingDownload, coverFile: e.target.files?.[0] ?? null })}
                                         className="text-sm"
                                         style={{ color: '#2c2c2c' }}
                                     />

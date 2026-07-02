@@ -63,16 +63,24 @@ The path to Catholicism was not a retreat from rigor but an extension of it. The
 ON CONFLICT (author_key) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS authors.downloads (
-    id          SERIAL PRIMARY KEY,
-    author_key  TEXT NOT NULL,
-    slug        TEXT NOT NULL,
-    filename    TEXT NOT NULL,
-    mime_type   TEXT NOT NULL,
-    data        BYTEA NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id              SERIAL PRIMARY KEY,
+    author_key      TEXT NOT NULL,
+    slug            TEXT NOT NULL,
+    filename        TEXT NOT NULL,
+    mime_type       TEXT NOT NULL,
+    data            BYTEA NOT NULL,
+    cover_filename  TEXT,
+    cover_mime_type TEXT,
+    cover_data      BYTEA,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (author_key, slug)
 );
+
+-- Adds the cover_* columns if this table already existed from a prior run of this script.
+ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_filename TEXT;
+ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_mime_type TEXT;
+ALTER TABLE authors.downloads ADD COLUMN IF NOT EXISTS cover_data BYTEA;
 
 CREATE OR REPLACE FUNCTION authors.set_updated_at()
 RETURNS TRIGGER AS $$
