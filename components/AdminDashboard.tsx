@@ -156,7 +156,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (res.ok) {
             setSuccess('Saved successfully.');
             setEditing(null);
-            router.refresh();
+            window.location.reload();
         } else {
             const data = await res.json();
             setError(data.error ?? 'Something went wrong.');
@@ -171,7 +171,7 @@ export default function AdminDashboardClient({ allData }: Props) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ authorKey, bookId }),
         });
-        if (res.ok) router.refresh();
+        if (res.ok) window.location.reload();
     }
 
     function startEditProfile(author: Author) {
@@ -227,7 +227,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (res.ok) {
             setSuccess('Profile saved.');
             setEditingProfile(null);
-            router.refresh();
+            window.location.reload();
         } else {
             const data = await res.json();
             setError(data.error ?? 'Something went wrong.');
@@ -250,7 +250,7 @@ export default function AdminDashboardClient({ allData }: Props) {
         if (res.ok) {
             setSuccess('Author added.');
             setAddingAuthor(null);
-            router.refresh();
+            window.location.reload();
         } else {
             const data = await res.json();
             setError(data.error ?? 'Something went wrong.');
@@ -524,7 +524,7 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                 placeholder="witness-persists"
                                             />
                                         </Field>
-                                        <Field label="Download filename (what the reader sees)">
+                                        <Field label="Name (what the reader sees)">
                                             <input
                                                 type="text"
                                                 value={editing.downloadFilename}
