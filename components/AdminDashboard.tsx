@@ -348,6 +348,11 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                     style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
                                                 />
                                                 <div>
+                                                    <div className="flex gap-3 flex-wrap mb-0.5">
+                                                        <StatusCheck label="Coming soon" checked={book.comingSoon} />
+                                                        <StatusCheck label="Show on site" checked={book.show} />
+                                                        <StatusCheck label="Downloadable" checked={book.downloadable} />
+                                                    </div>
                                                     <button
                                                         onClick={() => startView(author.key, book)}
                                                         className="font-medium text-left hover:underline"
@@ -355,22 +360,14 @@ export default function AdminDashboardClient({ allData }: Props) {
                                                     >
                                                         {book.title || '(untitled)'}
                                                     </button>
-                                                    <div className="flex gap-2 flex-wrap mt-0.5">
-                                                        {book.comingSoon && (
-                                                            <span className="text-sm" style={{ color: '#8c7b6b' }}>Coming Soon</span>
-                                                        )}
-                                                        {!book.show && (
-                                                            <span className="text-sm" style={{ color: '#c0392b' }}>Hidden</span>
-                                                        )}
-                                                        {book.downloadable && (
-                                                            <span
-                                                                className="text-sm select-all"
-                                                                style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
-                                                            >
-                                                                https://{author.domain}/download/{book.downloadSlug}
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                    {book.downloadable && (
+                                                        <p
+                                                            className="text-sm select-all mt-0.5"
+                                                            style={{ color: '#6b4c3b', wordBreak: 'break-all' }}
+                                                        >
+                                                            https://{author.domain}/download/{book.downloadSlug}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -741,5 +738,14 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
             <p className="text-sm mb-1" style={{ color: '#8c7b6b' }}>{label}</p>
             <div style={{ color: '#2c2c2c' }}>{children}</div>
         </div>
+    );
+}
+
+function StatusCheck({ label, checked }: { label: string; checked: boolean }) {
+    return (
+        <span className="flex items-center gap-1" style={{ color: '#8c7b6b' }}>
+            <input type="checkbox" checked={checked} disabled className="w-3 h-3" />
+            <span className="text-xs">{label}</span>
+        </span>
     );
 }
