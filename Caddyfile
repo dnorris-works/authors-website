@@ -1,0 +1,33 @@
+{
+    auto_https off
+}
+
+dallennorris.com, www.dallennorris.com {
+    request_header -X-Author-Key
+    request_header X-Author-Key "dallennorris"
+    reverse_proxy localhost:3001 {
+        lb_try_duration 5s
+    }
+}
+
+adrianreeve.com, www.adrianreeve.com {
+    request_header -X-Author-Key
+    request_header X-Author-Key "adrianreeve"
+    reverse_proxy localhost:3001 {
+        lb_try_duration 5s
+    }
+}
+
+deepfieldpress.com, www.deepfieldpress.com {
+    request_header -X-Author-Key
+    reverse_proxy localhost:3001 {
+        lb_try_duration 5s
+    }
+}
+
+:{$PORT:3000} {
+    request_header -X-Author-Key
+    reverse_proxy localhost:3001 {
+        lb_try_duration 5s
+    }
+}

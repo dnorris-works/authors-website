@@ -98,6 +98,11 @@ export async function getAuthorByDomain(hostname: string): Promise<Author | null
     return all.find(a => a.domain && (hostname === a.domain || hostname.endsWith('.' + a.domain))) ?? null;
 }
 
+export async function resolveAuthorFromHeader(headerValue: string | null): Promise<Author | null> {
+    if (!headerValue || headerValue.trim() === '') return null;
+    return getAuthorByKey(headerValue.trim());
+}
+
 export async function createAuthor(input: {
     key: string;
     domain: string;

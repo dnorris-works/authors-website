@@ -1,3 +1,6 @@
+[phases.setup]
+nixPkgs = ["caddy"]
+
 [phases.install]
 cmds = ["npm ci"]
 
@@ -5,4 +8,4 @@ cmds = ["npm ci"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm run start"
+cmd = "bash start.sh"
