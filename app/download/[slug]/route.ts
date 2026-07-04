@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveAuthorFromHeader } from '@/lib/authors';
+import { getAuthorByDomain, getAuthorByKey } from '@/lib/authors';
 import { getPool } from '@/lib/db';
 
 type Params = {
@@ -11,8 +11,11 @@ type Params = {
 export async function GET(req: NextRequest, { params }: Params) {
     const { slug } = await params;
 
-    const authorKey = req.headers.get('x-author-key');
-    const author = await resolveAuthorFromHeader(authorKey);
+    const hostname = req.headers.get('host')?.split(':')[0] ?? '';
+    let author = await getAuthorByDomain(hostname);
+    if (!author && process.env.AUTHOR) {
+        author = await getAuthorByKey(process.env.AUTHOR);
+    }
 
     if (!author) {
         return new NextResponse('File not found.', { status: 404 });

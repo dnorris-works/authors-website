@@ -1,13 +1,20 @@
 import { headers } from 'next/headers';
-import { resolveAuthorFromHeader, getAllAuthors } from '@/lib/authors';
+import { getAuthorByDomain, getAuthorByKey, getAllAuthors } from '@/lib/authors';
 import { getBooksForAuthor, getBookById } from '@/lib/books';
 import AuthorPage from '@/components/AuthorPage';
 import type { Metadata } from 'next';
 
 async function resolveAuthor() {
     const headersList = await headers();
-    const authorKey = headersList.get('x-author-key');
-    return resolveAuthorFromHeader(authorKey);
+    const hostname = headersList.get('host') ?? '';
+    const domain = hostname.split(':')[0];
+    const devAuthor = process.env.AUTHOR;
+
+    let author = await getAuthorByDomain(domain);
+    if (!author && devAuthor) {
+        author = await getAuthorByKey(devAuthor);
+    }
+    return author;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
