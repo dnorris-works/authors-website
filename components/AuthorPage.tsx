@@ -257,7 +257,9 @@ export default function AuthorPage({ author, books, featuredBook }: Props) {
                 style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}
             >
                 <p style={{ fontSize: '0.875rem', color: '#8c7b6b' }}>
-                    Published by Deep Field Press
+                    <a href="https://deepfieldpress.com" style={{ color: 'inherit', textDecoration: 'none' }}>
+                        Published by Deep Field Press
+                    </a>
                 </p>
             </footer>
 
